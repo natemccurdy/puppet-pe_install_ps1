@@ -1,0 +1,61 @@
+# install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
+Param(
+  [string]$server      = "<%= @server_setting %>",
+  [string]$ca          = "<%= @ca_setting %>",
+  [string]$certname    = $null,
+  [string]$msi_dest    = "C:\tmp\puppet-agent-x64.msi",
+  [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
+  [string]$install_log = "C:\tmp\puppet-install.log"
+)
+
+function DownloadPuppet {
+  Write-Host "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..."
+  [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
+  $webclient = New-Object system.net.webclient
+  $webclient.DownloadFile($msi_source,$msi_dest)
+}
+
+function GetCertname {
+  if ($certname) {
+    $certname
+  } else {
+    $objIPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
+    $name_components = @($objIPProperties.HostName, $objIPProperties.DomainName) | ? {$_}
+    $name_components -Join "."
+  }
+}
+
+function InstallPuppet {
+  $real_certname = GetCertname
+  if ($real_certname -eq $null) {
+    Throw { "Unable to determine a certname to use. Halting installation" }
+  }
+  Write-Host "Installing the Puppet Agent on $env:COMPUTERNAME..."
+  Write-Host "Using certname  = $real_certname"
+  Write-Host "Using server    = $server"
+  if ($ca -ne $server) {
+    Write-Host "Using ca        = $ca"
+    $ca_arg = "PUPPET_CA_SERVER=$ca"
+  }
+  Write-Host "Install log saved to $install_log"
+  $msiexec_path = "C:\Windows\System32\msiexec.exe"
+  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname $ca_arg"
+  $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
+  $msiexec_proc.WaitForExit()
+}
+
+function ValidateInstall {
+  If ((Get-WmiObject -Class Win32_Product).Name -match 'Puppet') {
+    Write-Host "The Puppet Agent has been installed on $env:COMPUTERNAME"
+  } else {
+    Throw {
+      "Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log"
+    }
+  }
+}
+
+DownloadPuppet
+InstallPuppet
+ValidateInstall
+
+Write-Host "Installation has completed."

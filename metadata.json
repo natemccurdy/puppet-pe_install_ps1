@@ -1,0 +1,43 @@
+{
+  "name": "natemccurdy-pe_install_ps1",
+  "version": "0.1.0",
+  "author": "natemccurdy",
+  "summary": "Creates an install.ps1 script to automate puppet-agent installations in Puppet Entererprise",
+  "license": "Apache-2.0",
+  "source": "https://github.com/natemccurdy/puppet-pe_install_ps1",
+  "project_page": "https://github.com/natemccurdy/puppet-pe_install_ps1",
+  "issues_url": "https://github.com/natemccurdy/puppet-pe_install_ps1/issues",
+  "dependencies": [
+    {
+      "name": "puppetlabs-stdlib",
+      "version_requirement": ">= 1.0.0"
+    }
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "6",
+        "7"
+      ]
+    },
+    {
+      "operatingsystem": "RedHat",
+      "operatingsystemrelease": [
+        "5",
+        "6",
+        "7"
+      ]
+    }
+  ],
+	"requirements": [
+    {
+      "name": "pe",
+      "version_requirement": ">= 2015.2.1 < 2016.1.0"
+    },
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.0.0 < 5.0.0"
+    }
+  ]
+}
