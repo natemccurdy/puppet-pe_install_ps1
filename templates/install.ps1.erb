@@ -29,10 +29,10 @@ function InstallPuppet {
   if ([string]::IsNullOrWhiteSpace($real_certname)) {
     Throw { "Unable to determine a certname to use. Halting installation" }
   }
+  Write-Host "Using certname => $real_certname"
+  Write-Host "Using server   => $server"
+  Write-Host "Saving the install log to $install_log"
   Write-Host "Installing the Puppet Agent on $env:COMPUTERNAME..."
-  Write-Host "Using certname  = $real_certname"
-  Write-Host "Using server    = $server"
-  Write-Host "Install log saved to $install_log"
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
   $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
