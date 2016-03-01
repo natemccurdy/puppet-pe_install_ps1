@@ -1,7 +1,6 @@
 # install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
 Param(
   [string]$server      = "<%= @server_setting %>",
-  [string]$ca          = "<%= @ca_setting %>",
   [string]$certname    = $null,
   [string]$msi_dest    = "C:\tmp\puppet-agent-x64.msi",
   [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
@@ -33,13 +32,9 @@ function InstallPuppet {
   Write-Host "Installing the Puppet Agent on $env:COMPUTERNAME..."
   Write-Host "Using certname  = $real_certname"
   Write-Host "Using server    = $server"
-  if ($ca -ne $server) {
-    Write-Host "Using ca        = $ca"
-    $ca_arg = "PUPPET_CA_SERVER=$ca"
-  }
   Write-Host "Install log saved to $install_log"
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
-  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname $ca_arg"
+  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
   $msiexec_proc.WaitForExit()
 }

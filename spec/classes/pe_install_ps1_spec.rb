@@ -10,7 +10,6 @@ describe 'pe_install_ps1' do
       {
         :msi_host       => 'foo.bar.com',
         :server_setting => 'foo.bar.com',
-        :ca_setting     => 'foo.bar.com',
       }
     end
     it { should compile.with_all_deps }
@@ -28,10 +27,6 @@ describe 'pe_install_ps1' do
     }
     it { should contain_file('PowerShell puppet-agent installer').with_content(
         %r{\$server\s+= "foo\.bar\.com",}
-      )
-    }
-    it { should contain_file('PowerShell puppet-agent installer').with_content(
-        %r{\$ca\s+= "foo\.bar\.com",}
       )
     }
   end

@@ -61,7 +61,6 @@ Here's an example of changing other parameters:
 class { 'pe_install_ps1':
   msi_host       => 'puppet.company.net',
   server_setting => 'puppet.company.net',
-  ca_setting     => 'puppet.company.net',
 }
 ```
 

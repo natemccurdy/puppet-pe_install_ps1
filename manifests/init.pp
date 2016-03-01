@@ -4,15 +4,13 @@
 # This class will create an install.ps1 script on a Puppet Master so that Windows nodes
 # can more easily automate the installation of the Puppet agent.
 #
-# @param msi_host [String] The FQDN of the puppet server hosting the puppet-agent MSI installer.
 # @param server_setting [String] The value that will go in 'server' setting of an agent's puppet.conf.
-# @param ca_setting [String] The value that will go in 'ca_server' setting of an agent's puppet.conf.
+# @param msi_host [String] The FQDN of the puppet server hosting the puppet-agent MSI installer.
 # @param public_dir [String] The path to the public package share on the Puppet Master.
 #
 class pe_install_ps1 (
-  String $msi_host       = $::settings::server,
   String $server_setting = $::settings::server,
-  String $ca_setting     = $::settings::server,
+  String $msi_host       = $::settings::server,
   String $public_dir     = '/opt/puppetlabs/server/data/packages/public',
 ) {
 
