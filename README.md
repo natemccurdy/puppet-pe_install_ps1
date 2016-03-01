@@ -4,7 +4,7 @@
 1. [Setup - Important!](#setup)
 1. [Usage](#usage)
   * [Windows Agent Install Process](#windows-agent-install-process)
-  * [Customizing Parameters](#customizing-parameters)
+  * [Customizing the install.ps1 script](#customizing-the-installps1-script)
 1. [Reference](#reference)
 1. [Limitations](#limitations)
 1. [Development](#development)
@@ -40,13 +40,13 @@ To execute the PowerShell-based installer on a Windows node, use one of the foll
 #### From an administrative Command Prompt window
 
 ```cmd
-@powershell -NoProfile -ExecutionPolicy unrestricted -Command "$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1
 ```
 
 #### From an administrative PowerShell window
 
 ```powershell
-$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
+$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
 ```
 
 **Note:** You must have your execution policy set to unrestricted (or at least in bypass) for this to work (`Set-ExecutionPolicy Unrestricted`).
@@ -55,8 +55,8 @@ $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://p
 
 The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `install.ps1` script.
 
-```
-$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1" -certname foo.custom.net -server puppet.custom.net
+```powershell
+$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1" -certname foo.custom.net -server puppet.custom.net
 ```
 
 ### Customizing the install.ps1 script
@@ -84,11 +84,6 @@ class { 'pe_install_ps1':
 
 #### `server_setting`
 The value that will go in the `server` setting in the agent's puppet.conf.
-
-Default value: `$::settings::server`
-
-#### `ca_setting`
-The value that will go in the `ca` setting in the agent's puppet.conf. If using load-balanced compile-masters, CA proxy'ing is on by default, so this setting will likely not need to be changed.
 
 Default value: `$::settings::server`
 
