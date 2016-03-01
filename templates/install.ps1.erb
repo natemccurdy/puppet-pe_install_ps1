@@ -16,7 +16,7 @@ function DownloadPuppet {
 }
 
 function GetCertname {
-  if ($certname) {
+  if (![string]::IsNullOrEmpty($certname)) {
     $certname
   } else {
     $objIPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
@@ -27,7 +27,7 @@ function GetCertname {
 
 function InstallPuppet {
   $real_certname = GetCertname
-  if ($real_certname -eq $null) {
+  if ([string]::IsNullOrWhiteSpace($real_certname)) {
     Throw { "Unable to determine a certname to use. Halting installation" }
   }
   Write-Host "Installing the Puppet Agent on $env:COMPUTERNAME..."
