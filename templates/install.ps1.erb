@@ -2,9 +2,9 @@
 Param(
   [string]$server      = "<%= @server_setting %>",
   [string]$certname    = $null,
-  [string]$msi_dest    = "C:\tmp\puppet-agent-x64.msi",
+  [string]$msi_dest    = "$env:temp\puppet-agent-x64.msi",
   [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
-  [string]$install_log = "C:\tmp\puppet-install.log"
+  [string]$install_log = "$env:temp\puppet-install.log"
 )
 
 function DownloadPuppet {
