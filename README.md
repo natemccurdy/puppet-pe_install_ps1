@@ -40,18 +40,26 @@ To execute the PowerShell-based installer on a Windows node, use one of the foll
 #### From an administrative Command Prompt window
 
 ```cmd
-@powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (iex ((new-object net.webclient).DownloadString('https://<FQDN_OF_PUPPET_MASTER>:8140/packages/current/install.ps1')))"
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1
 ```
 
 #### From an administrative PowerShell window
 
 ```powershell
-[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (iex ((new-object net.webclient).DownloadString('https://FQDN_OF_PUPPET_MASTER>:8140/packages/current/install.ps1')))
+$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
 ```
 
 **Note:** You must have your execution policy set to unrestricted (or at least in bypass) for this to work (`Set-ExecutionPolicy Unrestricted`).
 
-### Customizing parameters
+#### Adjusting the Puppet agent's settings during installation
+
+The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `install.ps1` script.
+
+```
+$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://pe-201532-master.puppetdebug.vlan:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1" -certname foo.custom.net -server puppet.custom.net
+```
+
+### Customizing the install.ps1 script
 
 If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
 
