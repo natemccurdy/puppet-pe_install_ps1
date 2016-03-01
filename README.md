@@ -15,29 +15,35 @@ This module will create a PowerShell script, `install.ps1`, that Windows nodes c
 
 ## Setup
 
-__This module only makes an `install.ps1` script on your Puppet Masters. The `pe_repo::platform::windows_x86_64` class must be added to the masters in conjunction with this module to stage the puppet-agent MSI installer.__
+### Step 1: Add the Windows pe_repo platform to your Puppet Masters
 
-If using the Enterprise Console, add the `pe_repo::platform::windows_x86_64` class to the `PE Master` node group.
+This module only creates an `install.ps1` script. Use the `pe_repo` module that comes with Puppet Enterprise to stage the MSI puppet-agent installer before trying to use the `install.ps1` script.
 
-## Usage
+In the Enterprise Console, add the `pe_repo::platform::windows_x86_64` class to the `PE Master` node group.
 
-Simply add the `ps_install_ps1` class to your Puppet Masters:
+### Step 2: Download this module and classify your Puppet Masters with `ps_install_ps1`
+
+Either download this module with `puppet module install natemccurdy-ps_install_ps1` or add it to your Puppetfile and deploy r10k/code_manager.
+
+Then, add the `ps_install_ps1` class to your Puppet Masters and trigger a puppet agent run:
 
 ```puppet
 include ::pe_install_ps1
 ```
 
-By default, the value of `$::settings::server` will be used as the MSI Host, server, and ca parameters.
+## Usage
 
 ### Windows Agent Install Process
 
-Install the puppet-agent package on Windows nodes by running the following command from an Administrator Command Prompt window:
+To execute the PowerShell-based installer on a Windows node, use one of the following methods.
+
+#### From an administrative Command Prompt window
 
 ```cmd
 @powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (iex ((new-object net.webclient).DownloadString('https://<FQDN_OF_PUPPET_MASTER>:8140/packages/current/install.ps1')))"
 ```
 
-To install the puppet-agent package using Powershell, open an administrative PowerShell window and run the following command:
+#### From an administrative PowerShell window
 
 ```powershell
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; (iex ((new-object net.webclient).DownloadString('https://FQDN_OF_PUPPET_MASTER>:8140/packages/current/install.ps1')))
@@ -47,7 +53,7 @@ To install the puppet-agent package using Powershell, open an administrative Pow
 
 ### Customizing parameters
 
-If using load-balanced compile masters, you probably want to tell the MSI installer to set the `server` setting of an agent to point to a load-balancer rather than the Master of Masters. Adjust the `server_setting` to accomplish that:
+If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
 
 ```puppet
 class { 'pe_install_ps1':
