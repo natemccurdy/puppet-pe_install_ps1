@@ -40,13 +40,13 @@ To execute the PowerShell-based installer on a Windows node, use one of the foll
 #### From an administrative Command Prompt window
 
 ```cmd
-@powershell -NoProfile -ExecutionPolicy unrestricted -Command "$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile('https://puppet.company.net:8140/packages/current/install.ps1', \"$env:temp\install-agent.ps1\"); & \"$env:temp\install-agent.ps1\""
 ```
 
 #### From an administrative PowerShell window
 
 ```powershell
-$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
+[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
 ```
 
 **Note:** You must have your execution policy set to unrestricted (or at least in bypass) for this to work (`Set-ExecutionPolicy Unrestricted`).
