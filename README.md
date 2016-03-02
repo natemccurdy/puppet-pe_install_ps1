@@ -55,6 +55,13 @@ To execute the PowerShell-based installer on a Windows node, use one of the foll
 
 The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `install.ps1` script.
 
+Here's the table of MSI Properties that can adjusted with arguments to the ps1 script:
+
+| MSI Property | ps1 Argument |
+|--------------|--------------|
+| `PUPPET_MASTER_SERVER`  | `server`   |
+| `PUPPET_AGENT_CERTNAME` | `certname` |
+
 ```powershell
 $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1" -certname foo.custom.net -server puppet.custom.net
 ```
