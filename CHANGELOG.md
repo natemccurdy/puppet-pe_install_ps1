@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.3](https://github.com/natemccurdy/puppet-pe_install_ps1/tree/0.2.3) (2016-03-02)
+[Full Changelog](https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.2...0.2.3)
+
 ## [0.2.2](https://github.com/natemccurdy/puppet-pe_install_ps1/tree/0.2.2) (2016-03-02)
 [Full Changelog](https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.1...0.2.2)
 
