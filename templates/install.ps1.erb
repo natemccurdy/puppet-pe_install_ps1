@@ -16,11 +16,12 @@ function DownloadPuppet {
 
 function GetCertname {
   if (![string]::IsNullOrEmpty($certname)) {
-    $certname
+    $certname.ToLower()
   } else {
     $objIPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
     $name_components = @($objIPProperties.HostName, $objIPProperties.DomainName) | ? {$_}
-    $name_components -Join "."
+    $certname        = $name_components -Join "."
+    $certname.ToLower()
   }
 }
 
