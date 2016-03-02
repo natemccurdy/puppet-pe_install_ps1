@@ -27,7 +27,7 @@ function GetCertname {
 
 function InstallPuppet {
   $real_certname = GetCertname
-  if ([string]::IsNullOrWhiteSpace($real_certname)) {
+  if ([string]::IsNullOrEmpty($real_certname)) {
     Throw { "Unable to determine a certname to use. Halting installation" }
   }
   Write-Host "Using certname => $real_certname"
