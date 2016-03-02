@@ -14,28 +14,18 @@ function DownloadPuppet {
   $webclient.DownloadFile($msi_source,$msi_dest)
 }
 
-function GetCertname {
-  if (![string]::IsNullOrEmpty($certname)) {
-    $certname.ToLower()
-  } else {
-    $objIPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
-    $name_components = @($objIPProperties.HostName, $objIPProperties.DomainName) | ? {$_}
-    $name_components -Join "."
-    $name_components.ToLower()
-  }
-}
-
 function InstallPuppet {
-  $real_certname = GetCertname
-  if ([string]::IsNullOrWhiteSpace($real_certname)) {
-    Throw { "Unable to determine a certname to use. Halting installation" }
+  if (![string]::IsNullOrEmpty($certname)) {
+    $certname     = $certname.ToLower()
+    $certname_arg = "PUPPET_AGENT_CERTNAME=$certname"
+    Write-Host "Using certname => $certname"
   }
-  Write-Host "Using certname => $real_certname"
   Write-Host "Using server   => $server"
   Write-Host "Saving the install log to $install_log"
   Write-Host "Installing the Puppet Agent on $env:COMPUTERNAME..."
+
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
-  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
+  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server $certname_arg"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
   $msiexec_proc.WaitForExit()
 }
