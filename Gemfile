@@ -1,21 +1,31 @@
-source 'https://rubygems.org'
+source ENV['GEM_SOURCE'] || "https://rubygems.org"
+
+def location_for(place, fake_version = nil)
+  if place =~ /^(git:[^#]*)#(.*)/
+    [fake_version, { :git => $1, :branch => $2, :require => false }].compact
+  elsif place =~ /^file:\/\/(.*)/
+    ['>= 0', { :path => File.expand_path($1), :require => false }]
+  else
+    [place, { :require => false }]
+  end
+end
 
 group :test do
-  gem "rake"
-  puppetversion = ENV.key?('PUPPET_VERSION') ? "#{ENV['PUPPET_VERSION']}" : ['>= 4.0']
-  gem 'puppet', puppetversion
-  gem "rspec"
-  gem "rspec-puppet"
-  gem "puppetlabs_spec_helper"
-  gem "metadata-json-lint"
-  gem "rspec-puppet-facts"
-  gem "rspec-puppet-utils"
+  gem 'rake'
+  gem 'puppet', *location_for(ENV['PUPPET_LOCATION'] || '>= 4.0.0')
+  gem 'puppetlabs_spec_helper'
+  gem 'webmock'
+  gem 'vcr'
+  gem 'rspec-puppet', :git => 'https://github.com/rodjek/rspec-puppet.git'
+  gem 'metadata-json-lint'
 end
 
 group :development do
-  gem "travis"
-  gem "travis-lint"
-  gem "vagrant-wrapper"
-  gem "puppet-blacksmith"
-  gem "guard-rake"
+  gem 'travis'
+  gem 'travis-lint'
+  gem 'puppet-blacksmith'
+  gem 'guard-rake'
+  gem 'rubocop', require: false
+  gem 'pry'
+  gem 'librarian-puppet'
 end

@@ -1,0 +1,24 @@
+---
+language: ruby
+bundler_args: --without development
+cache: bundler
+branches:
+  only:
+    - master
+before_install: rm Gemfile.lock || true
+sudo: false
+script:
+  - "bundle exec rake test"
+rvm:
+  - 2.1.6
+  - 2.1.7
+  - 2.1.8
+env:
+  - PUPPET_VERSION="~> 4.2.0"
+  - PUPPET_VERSION="~> 4.3.0"
+
+global:
+  - PUBLISHER_LOGIN=natemccurdy
+
+notifications:
+  email: false
