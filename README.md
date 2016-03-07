@@ -4,6 +4,8 @@
 1. [Setup - Important!](#setup)
 1. [Usage](#usage)
   * [Windows Agent Install Process](#windows-agent-install-process)
+    * [CMD Prompt](#administrative-cmd-window)
+    * [PowerShell Prompt](#administrative-powershell-window)
   * [Customizing the install.ps1 script](#customizing-the-installps1-script)
 1. [Reference](#reference)
 1. [Limitations](#limitations)
@@ -33,23 +35,40 @@ include ::pe_install_ps1
 
 ## Usage
 
+
 ### Windows Agent Install Process
 
-To execute the PowerShell-based installer on a Windows node, use one of the following methods.
+To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/packages/current/install.bash | bash`) and remotely run the `install.ps1` script, you can use PowerShell's WebClient library with server validation disabled. Below are two ways you can do that depending on how you manage your Windows nodes.
 
-#### From an administrative Command Prompt window
+Copy and paste these one-liner commands into an administrative CMD or PowerShell window.
+
+**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add ` -verbose $true` to the end of the `install-agent.ps1` command.
+
+#### Administrative CMD window
 
 ```cmd
 @powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile('https://puppet.company.net:8140/packages/current/install.ps1', \"$env:temp\install-agent.ps1\"); & \"$env:temp\install-agent.ps1\""
 ```
 
-#### From an administrative PowerShell window
+#### Administrative PowerShell window
+Use this method for **WinRM** as well
 
 ```powershell
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
 ```
 
 **Note:** You must have your execution policy set to unrestricted (or at least in bypass) for this to work (`Set-ExecutionPolicy Unrestricted`).
+
+#### Formatted Commands
+
+Here's what the commands look like when separated onto individual lines.
+
+```powershell
+[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+& "$env:temp\install-agent.ps1" -verbose $true
+```
 
 #### Adjusting the Puppet agent's settings during installation
 
@@ -63,7 +82,9 @@ Here's the table of MSI Properties that can adjusted with arguments to the ps1 s
 | `PUPPET_AGENT_CERTNAME` | `certname` |
 
 ```powershell
-$webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://<fqdn_of_puppet_master>:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1" -certname foo.custom.net -server puppet.custom.net
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+& "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
 ### Customizing the install.ps1 script
