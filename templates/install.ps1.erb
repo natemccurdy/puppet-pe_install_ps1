@@ -14,7 +14,15 @@ function DownloadPuppet {
   }
   [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
   $webclient = New-Object system.net.webclient
-  $webclient.DownloadFile($msi_source,$msi_dest)
+  try {
+    $webclient.DownloadFile($msi_source,$msi_dest)
+  }
+  catch [Net.WebException] {
+    Write-Warning "Failed to download the Puppet Agent installer: $msi_source"
+    Write-Warning "$_"
+    Write-Warning "Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?"
+    break
+  }
 }
 
 function GetCertname {
@@ -31,7 +39,8 @@ function GetCertname {
 function InstallPuppet {
   $real_certname = GetCertname
   if ([string]::IsNullOrEmpty($real_certname)) {
-    Throw { "Unable to determine a certname to use. Halting installation" }
+    Throw 'Unable to determine a certname to use. Halting installation...'
+    break
   }
   if ($verbose -ne $false) {
     Write-Verbose "Using certname => $real_certname" -verbose
@@ -51,9 +60,8 @@ function ValidateInstall {
       Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME" -verbose
     }
   } else {
-    Throw {
-      "Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log"
-    }
+      Throw {"Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log" }
+      break
   }
 }
 
