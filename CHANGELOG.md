@@ -1,6 +1,10 @@
 # Change log
 All notable changes to this project will be documented in this file.
 
+## [0.2.5] - 2016-03-11
+### Features:
+- Set a cap on the stdlib version of 5.0.0
+
 ## [0.2.4] - 2016-03-07
 ### Features:
 - Failures in the script are now caught gracefully
@@ -22,6 +26,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.0] - 2016-03-01
 
+[0.2.5]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.4...0.2.5
 [0.2.4]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.3...0.2.4
 [0.2.3]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.2...0.2.3
 [0.2.2]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.1...0.2.2
