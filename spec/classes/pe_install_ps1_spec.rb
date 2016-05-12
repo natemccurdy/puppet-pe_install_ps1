@@ -12,8 +12,8 @@ describe 'pe_install_ps1' do
         :server_setting => 'foo.bar.com',
       }
     end
-    it { should compile.with_all_deps }
-    it { should contain_file('PowerShell puppet-agent installer').with(
+    it { is_expected.to compile.with_all_deps }
+    it { is_expected.to contain_file('PowerShell puppet-agent installer').with(
         'ensure' => 'file',
         'path'   => '/opt/puppetlabs/server/data/packages/public/2015.3.2/install.ps1',
         'owner'  => 'root',
@@ -21,11 +21,11 @@ describe 'pe_install_ps1' do
         'mode'   => '0644'
       )
     }
-    it { should contain_file('PowerShell puppet-agent installer').with_content(
+    it { is_expected.to contain_file('PowerShell puppet-agent installer').with_content(
         %r{https://foo\.bar\.com:8140/packages/current/windows-x86_64/puppet-agent-x64\.msi}
       )
     }
-    it { should contain_file('PowerShell puppet-agent installer').with_content(
+    it { is_expected.to contain_file('PowerShell puppet-agent installer').with_content(
         %r{\$server\s+= "foo\.bar\.com",}
       )
     }
