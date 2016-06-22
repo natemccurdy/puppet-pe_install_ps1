@@ -33,6 +33,30 @@ function SetTimeServices {
   w32tm /resync /force  
 }
 
+function SetDnsServices {
+#  try
+#  {
+    $serverAddresses = (Get-DnsClientServerAddress 'Ethernet0').ServerAddresses
+    if (-Not ($serverAddresses.Count) -Or <%= "1" %>) {
+      $serverAddresses = '8.8.8.8','8.8.4.4'
+      if ($verbose -ne $false) {
+        Write-Verbose "Updating Server Addresses for <%= 'Ethernet0' %> InterfaceAlias: $serverAddresses"
+      }
+    }
+    else {
+      if ($verbose -ne $false) {
+        Write-Verbose "Keeping existing Server Addresses for <%= 'Ethernet0' %> InterfaceAlias: $serverAddresses"
+      }
+    }
+    $serverAddresses = Out-String -InputObject $serverAddresses -Stream
+    Set-DnsClientServerAddress -InterfaceAlias Ethernet0 -ServerAddresses $serverAddresses
+#  }
+#  catch {
+    #TODO catch invalid InterfaceAlias
+    #TODO catch invalid ServerAddresses
+#  }
+}
+
 function GetCertname {
   if (![string]::IsNullOrEmpty($certname)) {
     $certname.ToLower()
@@ -75,6 +99,7 @@ function ValidateInstall {
 
 DownloadPuppet
 SetTimeServices
+SetDnsServices
 InstallPuppet
 ValidateInstall
 
