@@ -25,6 +25,14 @@ function DownloadPuppet {
   }
 }
 
+function SetTimeServices {
+  net stop w32time
+  w32tm /config /syncfromflags:manual /manualpeerlist:"0.pool.ntp.org,1.pool.ntp.org,2.pool.ntp.org" # no whitespace
+  w32tm /config /reliable:yes
+  net start w32time
+  w32tm /resync /force  
+}
+
 function GetCertname {
   if (![string]::IsNullOrEmpty($certname)) {
     $certname.ToLower()
@@ -66,6 +74,7 @@ function ValidateInstall {
 }
 
 DownloadPuppet
+SetTimeServices
 InstallPuppet
 ValidateInstall
 
