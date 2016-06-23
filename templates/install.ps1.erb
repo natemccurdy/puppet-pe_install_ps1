@@ -11,7 +11,7 @@ Param(
 #$DebugPreference = 'Continue'
 
 function DownloadPuppet {
-  Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..." -verbose
+  Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..."
   [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
   $webclient = New-Object system.net.webclient
   try {
@@ -136,10 +136,10 @@ function InstallPuppet {
     Throw 'Unable to determine a certname to use. Halting installation...'
     break
   }
-  Write-Verbose "Using certname => $real_certname" -verbose
-  Write-Verbose "Using server   => $server" -verbose
-  Write-Verbose "Saving the install log to $install_log" -verbose
-  Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..." -verbose
+  Write-Verbose "Using certname => $real_certname"
+  Write-Verbose "Using server   => $server"
+  Write-Verbose "Saving the install log to $install_log"
+  Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..."
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
   $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
@@ -148,7 +148,7 @@ function InstallPuppet {
 
 function ValidateInstall {
   If ((Get-WmiObject -Class Win32_Product).Name -match 'Puppet') {
-    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME" -verbose
+    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME"
   } else {
       Throw {"Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log" }
       break
@@ -160,4 +160,4 @@ SetTimeServices
 SetDnsServices
 InstallPuppet
 ValidateInstall
-Write-Verbose "Installation has completed." -verbose
+Write-Verbose "Installation has completed."
