@@ -28,12 +28,15 @@ function DownloadPuppet {
 }
 
 function SetTimeServices {
-  net stop w32time
+  Write-Verbose 'Managing Time Services (W32Time).'
+  if ((Get-Service -Name W32Time).Status -ne 'stopped') {
+    Write-Debug 'Stopping W32Time Service.'
+    net stop w32time
+  }
   w32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
   w32tm /config /reliable:yes
   net start w32time
-  w32tm /resync /force
-  #TODO we may have to wait here for the time to resynce
+  w32tm /resync
 }
 
 function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
@@ -45,8 +48,7 @@ function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ip
     $addressNames = Out-String -InputObject $serverAddresses -Stream
     Write-Debug "Pre-existing Server Addresses: $addressNames"
   }
-  #TODO Something isnt' quite right with this logic here
-  if (-Not $addressCount -Or '<%= @dns_override %>') {
+  if (-Not $addressCount -And '<%= @dns_override %>') {
     $serverAddresses = $dns_servers
     if ($verbose -ne $false) {
       Write-Verbose "Updating $ipv DNS Server Addresses for $interface [$index]: $serverAddresses"
@@ -155,11 +157,11 @@ function ValidateInstall {
   }
 }
 
-DownloadPuppet
+#DownloadPuppet
 SetTimeServices
-SetDnsServices
-InstallPuppet
-ValidateInstall
+#SetDnsServices
+#InstallPuppet
+#ValidateInstall
 
 if ($verbose -ne $false) {
   Write-Verbose "Installation has completed." -verbose
