@@ -45,7 +45,7 @@ To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/pa
 
 Copy and paste these one-liner commands into an administrative CMD or PowerShell window.
 
-**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add ` -verbose $true` to the end of the `install-agent.ps1` command.
+**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add `-verbose` to the end of the `install-agent.ps1` command.
 
 #### Administrative CMD window
 
@@ -70,7 +70,7 @@ Here's what the commands look like when separated onto individual lines.
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
-& "$env:temp\install-agent.ps1" -verbose $true
+& "$env:temp\install-agent.ps1" -verbose
 ```
 
 #### Adjusting the Puppet agent's settings during installation
