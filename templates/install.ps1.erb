@@ -26,15 +26,23 @@ function DownloadPuppet {
 }
 
 function SetTimeServices {
-  Write-Verbose 'Managing Time Services (W32Time).'
-  if ((Get-Service -Name W32Time).Status -ne 'stopped') {
-    Write-Debug 'Stopping W32Time Service.'
-    net stop w32time
+  Write-Verbose 'Managing time services (W32time).'
+  $timeServicesStatus = (Get-Service -Name W32time).Status
+  if ($timeServicesStatus -ne 'stopped') {
+    Write-Debug 'Stopping W32time service.'
+    $rc = net stop W32time
   }
-  w32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
-  w32tm /config /reliable:yes
-  net start w32time
-  w32tm /resync
+  Write-Verbose "Configuring W32time to use '<%= @ntp %>' for time servers."
+  $rc = W32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
+  $rc = W32tm /config /reliable:yes
+  Write-Debug 'Starting W32time service.'
+  $rc = net start W32time
+  Write-Debug 'Current Configuration:'
+  W32tm /query /configuration | foreach {
+    Write-Debug $_
+  }
+  Write-Verbose 'Force time resync.'
+  $rc = W32tm /resync
 }
 
 function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
