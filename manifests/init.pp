@@ -35,7 +35,7 @@ class pe_install_ps1 (
 
   # Set other template variables.
   $dns_override = $override_dns ? {
-    true    => 'OVERRIDE REQUESTED',
+    true    => 'OVERRIDE',
     default => '',
   }
   # Template must provide wrapping "'"s for these variables.

@@ -32,7 +32,8 @@ function SetTimeServices {
   w32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
   w32tm /config /reliable:yes
   net start w32time
-  w32tm /resync /force  
+  w32tm /resync /force
+  #TODO we may have to wait here for the time to resynce
 }
 
 function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
@@ -44,6 +45,7 @@ function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ip
     $addressNames = Out-String -InputObject $serverAddresses -Stream
     Write-Debug "Pre-existing Server Addresses: $addressNames"
   }
+  #TODO Something isnt' quite right with this logic here
   if (-Not $addressCount -Or '<%= @dns_override %>') {
     $serverAddresses = $dns_servers
     if ($verbose -ne $false) {

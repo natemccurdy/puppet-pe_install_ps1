@@ -25,6 +25,6 @@ class pe_install_ps1::params {
   $dns_servers4      = []
   $dns_servers6      = []
   $validate_dns      = true
-  $override_dns      = false
+  $override_dns      = true
 
 }
