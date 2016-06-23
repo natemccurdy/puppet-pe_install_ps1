@@ -1,12 +1,14 @@
 # install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
+[CmdletBinding()]
 Param(
   [string]$server      = "<%= @server_setting %>",
   [string]$certname    = $null,
   [string]$msi_dest    = "$env:temp\puppet-agent-x64.msi",
   [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
-  [string]$install_log = "$env:temp\puppet-install.log",
-  [bool]$verbose       = $false
+  [string]$install_log = "$env:temp\puppet-install.log"
 )
+
+#$DebugPreference = 'Continue'
 
 function DownloadPuppet {
   if ($verbose -ne $false) {
@@ -27,34 +29,88 @@ function DownloadPuppet {
 
 function SetTimeServices {
   net stop w32time
-  w32tm /config /syncfromflags:manual /manualpeerlist:"0.pool.ntp.org,1.pool.ntp.org,2.pool.ntp.org" # no whitespace
+  w32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
   w32tm /config /reliable:yes
   net start w32time
   w32tm /resync /force  
 }
 
+function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
+  Write-Debug "Set $interface [$index] $ipv DNS Server Addresses to '$dns_servers'"
+  $serverAddresses = (Get-DnsClientServerAddress -InterfaceIndex "$index" -AddressFamily $ipv).ServerAddresses
+  $addressCount    = $serverAddresses.Count
+  Write-Debug "Pre-existing Server Addresses count: $addressCount"
+  if ($addressCount) {
+    $addressNames = Out-String -InputObject $serverAddresses -Stream
+    Write-Debug "Pre-existing Server Addresses: $addressNames"
+  }
+  if (-Not $addressCount -Or '<%= @dns_override %>') {
+    $serverAddresses = $dns_servers
+    if ($verbose -ne $false) {
+      Write-Verbose "Updating $ipv DNS Server Addresses for $interface [$index]: $serverAddresses"
+    }
+  }
+  else {
+    if ($verbose -ne $false) {
+      Write-Verbose "Keeping existing $ipv DNS Server Addresses for $interface [$index]: $serverAddresses"
+    }
+  }
+  $serverAddresses = Out-String -InputObject $serverAddresses -Stream
+  if (-Not $serverAddresses) {
+    Write-Debug "No $ipv DNS Server Addresses defined for $interface [$index]."
+    return $false
+  }
+  Set-DnsClientServerAddress -InterfaceIndex $index -ServerAddresses '$serverAddresses'<% if @validate_dns %> -Validate<% end %>
+  return $true
+}
+
 function SetDnsServices {
-#  try
-#  {
-    $serverAddresses = (Get-DnsClientServerAddress 'Ethernet0').ServerAddresses
-    if (-Not ($serverAddresses.Count) -Or <%= "1" %>) {
-      $serverAddresses = '8.8.8.8','8.8.4.4'
+  try {
+<% if @interface_index != '' -%>
+    $index     = '<%= @interface_index %>'
+    $interface = (Get-DnsClientServerAddress -IntefaceIndex $index)[0].InterfaceAlias
+<% else -%>
+    $interface = '<%= @interface %>'
+    $index     = (Get-DnsClientServerAddress -InterfaceAlias $interface)[0].InterfaceIndex
+<% end -%>
+  }
+  catch {
+<% if @interface_index != '' -%>
+    Throw "Invalid interface_index specified: '<%= @interface_index %>'"
+<% else -%>
+    Throw "Invalid interface_alias specified: '<%= @interface %>'"
+<% end -%>
+    break
+  }
+  if (-Not $index -Or -Not $interface) {
+    Throw 'Cannot find the requested interface on host. Unable to configure/verify DNS.'
+    break
+  }
+  Write-Debug "InterfaceAlias: $interface"
+  Write-Debug "InterfaceIndex: $index"
+  if ($verbose -ne $false) {
+    Write-Verbose "Setting DNS Server Addresses for $interface [$index]"
+  }
+  try {
+    Write-Debug "Set-DnsClientServers will <% unless $validate_dns 
+                                     %>not <% end %>attempt to validate the supplied DNS servers."
+    $ipv4_rc = SetDnsServerAddresses $interface $index 'IPv4' '<%= @dns4 %>'
+    $ipv6_rc = SetDnsServerAddresses $interface $index 'IPv6' '<%= @dns6 %>'
+    if ($ipv4_rc -Or $ipv6_rc) {
       if ($verbose -ne $false) {
-        Write-Verbose "Updating Server Addresses for <%= 'Ethernet0' %> InterfaceAlias: $serverAddresses"
+        Write-Verbose "Successfully configured DNS Server Addresses for $interface [$index]."
       }
+    }
+  }
+  catch {
+    if ($_.Exception.GetType().FullName -eq 'Microsoft.Management.Infrastructure.CimException') {
+      Throw "Failed to set the DNS Server Addresses for $interface [$index]. Check the provided/existing server addresses."
+      break
     }
     else {
-      if ($verbose -ne $false) {
-        Write-Verbose "Keeping existing Server Addresses for <%= 'Ethernet0' %> InterfaceAlias: $serverAddresses"
-      }
+      throw $_.Exception
     }
-    $serverAddresses = Out-String -InputObject $serverAddresses -Stream
-    Set-DnsClientServerAddress -InterfaceAlias Ethernet0 -ServerAddresses $serverAddresses
-#  }
-#  catch {
-    #TODO catch invalid InterfaceAlias
-    #TODO catch invalid ServerAddresses
-#  }
+  }
 }
 
 function GetCertname {
