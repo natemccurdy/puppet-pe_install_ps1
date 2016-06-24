@@ -128,6 +128,41 @@ The path to the public package share on the Puppet Master.
 
 Default value: `/opt/puppetlabs/server/data/packages/public`
 
+#### `interface_alias`
+The `InterfaceAlias` of the interface to which the DNS settings will be applied. This value will be overriden by `interface_index` if both are supplied.
+
+Default value: `Ethernet0`
+
+#### `interface_index`
+The `InterfaceIndex` of the interface to which the DNS settings will be applied. This value will override `interface_alias` if both are supplied.
+
+Default value: none
+
+#### `ntp_servers`
+An array of NTP servers to use to do the time sync.
+
+Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
+
+#### `dns_servers4`
+An array of IPv4 DNS servers to set on the specified interface.
+
+Default value: `[ ]`
+
+#### `dns_servers6`
+An array of IPv6 DNS servers to set on the specified interface.
+
+Default value: `[ ]`
+
+#### `validate_dns`
+Boolean to set whether or not the operating system should attempt to validate the provided DNS servers as being valid.
+
+Default value: `True`
+
+#### `override_dns`
+Boolean to set whether or not to override any existing DNS settings on the specified interface.
+
+Default value: `True`
+
 ## Limitations
 
 So far, this only works for **Puppet Enterprise 2015.2.1** or higher, and only for **x86_64** puppet-agent packages.
