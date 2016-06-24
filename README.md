@@ -169,6 +169,8 @@ So far, this only works for **Puppet Enterprise 2015.2.1** or higher, and only f
 
 The `pe_repo` module only supports staging the Windows Puppet Agent MSI since Puppet Enterprise 2015.2.1, so at least that version is required to get any use out of this module.
 
+This will only allow one to set the DNS entries for a single interface, which should be the one used to connect to the Puppet master. This is meant only as a stop-gap until the agent is fully installed, from which point DNS should be managed through standard Puppet practices. The same is true for the NTP settings, as well. They should be put under proper management once the agent is installed.
+
 ## Development
 
 Feel free to submit issues and PR's if there's something wrong or missing from this module.
