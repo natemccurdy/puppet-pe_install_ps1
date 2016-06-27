@@ -90,6 +90,48 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
+Additionally, the following optional arguments can be supplied to the ps1 script:
+
+| ps1 Argument      | Type     | Description                                                                   |
+|-------------------|----------|-------------------------------------------------------------------------------|
+| `msi_dest`        | `string` | Fully-qualified path to where the installation MSI will be downloaded         |
+| `msi_source`      | `string` | URL from which to download the installation MSI                               |
+| `interface_alias` | `string` | InterfaceAlias on which to set the DNS settings                               |
+| `interface_index` | `int`    | InterfaceAlias on which to set the DNS settings (overrides `interface_alias`) |
+| `install_log`     | `string` | Fully-qualified path to the installation log                                  |
+
+#### Turning on Debuging Mode
+
+There are two approaches for turning on debugging for the ps1 script.
+
+##### Method 1: In the script file
+
+In the ps1 script, remove the comment marker `#`, changing the line
+
+```powershell
+#$DebugPreference = 'Continue'
+```
+
+to
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+##### Method 2: In the shell
+
+Execute the following at the shell prompt:
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+Note: This will enable debugging on all scripts run from this shell. To return to the default behavior, execute:
+
+```powershell
+$DebugPreference = 'ContinueSilently'
+```
+
 ### Customizing the install.ps1 script
 
 If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
@@ -104,8 +146,13 @@ Here's an example of changing other parameters:
 
 ```puppet
 class { 'pe_install_ps1':
-  msi_host       => 'puppet.company.net',
-  server_setting => 'puppet.company.net',
+  msi_host        => 'puppet.company.net',
+  server_setting  => 'puppet.company.net',
+  interface_index => '1',
+  $ntp_servers    => ['pool.us.ntp.org'],
+  dns_servers4    => ['8.8.8.8','8.8.4.4'],
+  validate_dns    => True,
+  override_dns    => False,
 }
 ```
 
@@ -139,7 +186,7 @@ The `InterfaceIndex` of the interface to which the DNS settings will be applied.
 Default value: none
 
 #### `ntp_servers`
-An array of NTP servers to use to do the time sync.
+An array of FQDN NTP servers to use to do the time sync.
 
 Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
 
