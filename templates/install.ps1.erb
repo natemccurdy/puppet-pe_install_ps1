@@ -61,6 +61,22 @@ function DownloadPuppet {
   }
 }
 
+function ResyncTime {
+  $result = $TRUE
+  W32tm /resync | foreach {
+    Write-Debug "$_"
+    if ($_ -like '*The computer did not resync because the required time change was too big*') {
+      $result = $FALSE
+    }
+    else {
+      if ($_ -like '*computer did not resync*') {
+        Write-Warning $_
+      }
+    }
+  }
+  return $result
+}
+
 function SetTimeServices {
   Write-Verbose 'Managing time services (W32time).'
   $timeServicesStatus = (Get-Service -Name W32time).Status
@@ -81,9 +97,20 @@ function SetTimeServices {
   W32tm /query /configuration | foreach {
     Write-Debug "$_"
   }
-  Write-Verbose 'Force time resync.'
-  $rc = W32tm /resync
-  Out-String -InputObject $rc -Stream | Write-Debug
+  Write-Verbose 'Force time sync.'
+  $rc = ResyncTime
+  if (-Not $rc) {
+    $pauseSecs = 10
+    Write-Verbose 'Retrying time resync.'
+    Write-Debug   "Waiting ${pauseSecs} seconds before retrying time sync."
+    Start-Sleep -s $pauseSecs
+    $rc = ResyncTime
+    if (-Not $rc) {
+      Write-Error   'Could not sync time.'
+      Write-Warning 'Manual intervention may be neccessary. Please check provided NTP Servers.'
+      break
+    }
+  }
 }
 
 function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
@@ -98,7 +125,7 @@ function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ip
   }
   if (-Not $addressCount -Or '<%= @dns_override %>') {
     $serverAddresses = $dns_servers
-    if ($verbose -ne $false) {
+    if ($verbose -ne $FALSE) {
     Write-Verbose "Updating ${ipv} DNS Server Addresses for ${interface} [${index}]: ${serverAddresses}"
     }
   }
@@ -108,7 +135,7 @@ function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ip
   $serverAddresses = Out-String -InputObject $serverAddresses -Stream
   if (-Not $serverAddresses) {
     Write-Debug "No ${ipv} DNS Server Addresses defined for ${interface} [${index}]."
-    return $false
+    return $FALSE
   }
   Set-DnsClientServerAddress -InterfaceIndex $index -ServerAddresses $serverAddresses<% if @validate_dns %> -Validate<% end %> -ErrorAction 'Stop'
   Write-Debug 'Verifying that a change occurred'
@@ -121,7 +148,7 @@ function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ip
     Write-Warning "Please verify ${interface} [${index}] is the correct interface and can have its ServerAddress set."
     break
   }
-  return $true
+  return $TRUE
 }
 
 function SetDnsServices {
