@@ -63,7 +63,7 @@ function DownloadPuppet {
 
 function ResyncTime {
   $result = $TRUE
-  W32tm /resync | foreach {
+  W32tm /resync /force | foreach {
     Write-Debug "$_"
     if ($_ -like '*The computer did not resync because the required time change was too big*') {
       $result = $FALSE
@@ -211,6 +211,8 @@ function SetDnsServices {
       Throw $_.Exception
     }
   }
+  Write-Debug 'DNS Settings (all interfaces):'
+  Out-String -InputObject (Get-DnsClientServerAddress) -Stream | Write-Debug
 }
 
 function GetCertname {
@@ -232,7 +234,7 @@ function InstallPuppet {
   }
   Write-Verbose "Using certname => ${real_certname}"
   Write-Verbose "Using server   => ${server}"
-  Write-Verbose "Saving the install log to ${install_log}"
+  Write-Verbose "Saving the install log to ${install_log}."
   Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..."
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
   $msiexec_args = "/qn /log ${install_log} /i ${msi_dest} PUPPET_MASTER_SERVER=${server} PUPPET_AGENT_CERTNAME=${real_certname}"
@@ -244,7 +246,7 @@ function ValidateInstall {
   Write-Verbose 'Validating Puppet Agent.'
   Write-Debug   'Checking if WmiObject exists for Puppet.'
   If ((Get-WmiObject -Class Win32_Product).Name -Match 'Puppet') {
-    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME"
+    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME."
   }
   else {
     Throw "Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: ${install_log}"
