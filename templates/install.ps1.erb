@@ -1,26 +1,58 @@
 # install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
+[CmdletBinding()]
+
 Param(
-  [string]$server      = "<%= @server_setting %>",
-  [string]$certname    = $null,
-  [string]$msi_dest    = "$env:temp\puppet-agent-x64.msi",
-  [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
-  [string]$install_log = "$env:temp\puppet-install.log",
-  [bool]$verbose       = $false
+  [string]$server          = "<%= @server_setting %>",
+  [string]$certname        = $null,
+  [string]$msi_dest        = "$env:temp\puppet-agent-x64.msi",
+  [string]$msi_source      = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
+  [string]$install_log     = "$env:temp\puppet-install.log"
 )
+# Uncomment the following line to enable debugging messages. Alternatively, this variable can be set in the shell.
+#$DebugPreference = 'Continue'
+
+function ValidateParameters {
+  if (Get-Command Test-NetConnection -errorAction SilentlyContinue) {
+    Write-Verbose 'Validating server connections.'
+    $checkPort  = 8140
+    $msiHost    = ([System.Uri]$msi_source).Host 
+    $checkHosts = ($server, $msiHost)
+    foreach ($checkHost in $checkHosts) {
+      Write-Verbose "Checking connection to ${checkHost}:${checkPort}."
+      $checkJob = Start-Job -ScriptBlock {
+        param($checkHost, $checkPort)
+        Test-NetConnection -ComputerName "${checkHost}" -Port $checkPort -InformationLevel Quiet
+      } -ArgumentList ($CheckHost, $CheckPort)
+      Out-String -InputObject $checkJob -Stream | Write-Debug
+      $rc = Wait-Job $checkJob
+      Out-String -InputObject $rc -Stream | Write-Debug
+      $rc = Receive-Job $checkJob -OutVariable testResult
+      Out-String -InputObject $rc -Stream | Write-Debug
+      if ($testResult) {
+        Write-Verbose "Successful connection to ${checkHost}:${checkPort}."
+      }
+      else {        
+        Throw "Failed to connect to ${checkHost}:${checkPort}"
+        break
+      }
+    }
+  }
+  else {
+    Write-Debug 'Test-NetConnection cmdlet is not available. Skipping connection tests.'
+  }
+}
 
 function DownloadPuppet {
-  if ($verbose -ne $false) {
-    Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..." -verbose
-  }
+  Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..."
   [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
   $webclient = New-Object system.net.webclient
   try {
     $webclient.DownloadFile($msi_source,$msi_dest)
   }
   catch [Net.WebException] {
-    Write-Warning "Failed to download the Puppet Agent installer: $msi_source"
+    Write-Warning "Failed to download the Puppet Agent installer: ${msi_source}"
     Write-Warning "$_"
-    Write-Warning "Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?"
+    Write-Warning 'Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?'
     break
   }
 }
@@ -42,33 +74,40 @@ function InstallPuppet {
     Throw 'Unable to determine a certname to use. Halting installation...'
     break
   }
-  if ($verbose -ne $false) {
-    Write-Verbose "Using certname => $real_certname" -verbose
-    Write-Verbose "Using server   => $server" -verbose
-    Write-Verbose "Saving the install log to $install_log" -verbose
-    Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..." -verbose
-  }
+  Write-Verbose "Using certname => ${real_certname}"
+  Write-Verbose "Using server   => ${server}"
+  Write-Verbose "Saving the install log to ${install_log}."
+  Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..."
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
-  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
+  $msiexec_args = "/qn /log ${install_log} /i ${msi_dest} PUPPET_MASTER_SERVER=${server} PUPPET_AGENT_CERTNAME=${real_certname}"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
   $msiexec_proc.WaitForExit()
 }
 
 function ValidateInstall {
-  If ((Get-WmiObject -Class Win32_Product).Name -match 'Puppet') {
-    If ($verbose -ne $false) {
-      Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME" -verbose
-    }
-  } else {
-      Throw {"Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log" }
-      break
+  Write-Verbose 'Validating Puppet Agent.'
+  Write-Debug   'Checking if WmiObject exists for Puppet.'
+  If ((Get-WmiObject -Class Win32_Product).Name -Match 'Puppet') {
+    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME."
+  }
+  else {
+    Throw "Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: ${install_log}"
+    break
+  }
+  Write-Debug 'Validating Puppet Agent service is running.'
+  $puppetStatus = (Get-Service -Name Puppet).Status
+  if ($puppetStatus -eq 'running') {
+    Write-Verbose "The Puppet Agent is running on $env:COMPUTERNAME"
+  }
+  else {
+    Write-Debug "Puppet Agent Status: ${puppetStatus}"
+    Throw "Something went wrong with starting the Puppet Agent on $env:COMPUTERNAME.  Check the install log at: ${install_log}"
+    break
   }
 }
 
+ValidateParameters
 DownloadPuppet
 InstallPuppet
 ValidateInstall
-
-if ($verbose -ne $false) {
-  Write-Verbose "Installation has completed." -verbose
-}
+Write-Verbose "Installation has completed."

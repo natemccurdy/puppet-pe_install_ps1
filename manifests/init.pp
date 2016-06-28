@@ -9,17 +9,18 @@
 # @param public_dir [String] The path to the public package share on the Puppet Master.
 #
 class pe_install_ps1 (
-  String $server_setting = $::settings::server,
-  String $msi_host       = $::settings::server,
-  String $public_dir     = '/opt/puppetlabs/server/data/packages/public',
-) {
+  # Master/Agent Settings
+  String $server_setting         = $::settings::server,
+  String $msi_host               = $::settings::server,
+  String $public_dir             = $::pe_install_ps1::params::public_dir,
+) inherits pe_install_ps1::params {
 
-  # Validate the paramters.
+  # Validate the parameters.
   validate_absolute_path($public_dir)
 
   # Validate that this class is being declared on a Puppet Master.
   if $::pe_build == undef {
-    fail("Unable to determine the pe_build fact. ${module_name} should only be declared on a Puppet Master")
+    fail("Unable to determine the pe_build fact. ${module_name} should only be declared on a Puppet Master.")
   } elsif versioncmp($::pe_build, '2015.2.1') == -1 {
     fail("${module_name} is meant for PE versions greater than 2015.2.1, not ${::pe_build}.")
   }
@@ -30,7 +31,7 @@ class pe_install_ps1 (
     path    => "${public_dir}/${::pe_build}/install.ps1",
     owner   => 'root',
     group   => '0',
-    mode    => '0644',
+    mode    => '0664',
     content => template('pe_install_ps1/install.ps1.erb'),
   }
 

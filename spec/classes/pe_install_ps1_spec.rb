@@ -18,7 +18,7 @@ describe 'pe_install_ps1' do
         'path'   => '/opt/puppetlabs/server/data/packages/public/2015.3.2/install.ps1',
         'owner'  => 'root',
         'group'  => '0',
-        'mode'   => '0644'
+        'mode'   => '0664'
       )
     }
     it { is_expected.to contain_file('PowerShell puppet-agent installer').with_content(

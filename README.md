@@ -45,7 +45,7 @@ To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/pa
 
 Copy and paste these one-liner commands into an administrative CMD or PowerShell window.
 
-**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add ` -verbose $true` to the end of the `install-agent.ps1` command.
+**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add `-verbose` to the end of the `install-agent.ps1` command.
 
 #### Administrative CMD window
 
@@ -70,7 +70,7 @@ Here's what the commands look like when separated onto individual lines.
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
-& "$env:temp\install-agent.ps1" -verbose $true
+& "$env:temp\install-agent.ps1" -verbose
 ```
 
 #### Adjusting the Puppet agent's settings during installation
@@ -90,6 +90,38 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
+#### Turning on Debuging Mode
+
+There are two approaches for turning on debugging for the ps1 script.
+
+##### Method 1: In the script file
+
+In the ps1 script, remove the comment marker `#`, changing the line
+
+```powershell
+#$DebugPreference = 'Continue'
+```
+
+to
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+##### Method 2: In the shell
+
+Execute the following at the shell prompt:
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+Note: This will enable debugging on all scripts run from this shell. To return to the default behavior, execute:
+
+```powershell
+$DebugPreference = 'ContinueSilently'
+```
+
 ### Customizing the install.ps1 script
 
 If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
@@ -104,8 +136,8 @@ Here's an example of changing other parameters:
 
 ```puppet
 class { 'pe_install_ps1':
-  msi_host       => 'puppet.company.net',
-  server_setting => 'puppet.company.net',
+  msi_host        => 'puppet.company.net',
+  server_setting  => 'puppet.company.net',
 }
 ```
 
