@@ -45,7 +45,7 @@ To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/pa
 
 Copy and paste these one-liner commands into an administrative CMD or PowerShell window.
 
-**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add ` -verbose $true` to the end of the `install-agent.ps1` command.
+**NOTE:** By default, all output is hidden so that the script can run via WinRM if necessary. To see the installation progress, add `-verbose` to the end of the `install-agent.ps1` command.
 
 #### Administrative CMD window
 
@@ -70,7 +70,7 @@ Here's what the commands look like when separated onto individual lines.
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = New-Object System.Net.WebClient
 $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
-& "$env:temp\install-agent.ps1" -verbose $true
+& "$env:temp\install-agent.ps1" -verbose
 ```
 
 #### Adjusting the Puppet agent's settings during installation
@@ -90,6 +90,48 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
+Additionally, the following optional arguments can be supplied to the ps1 script:
+
+| ps1 Argument      | Type     | Description                                                                   |
+|-------------------|----------|-------------------------------------------------------------------------------|
+| `msi_dest`        | `string` | Fully-qualified path to where the installation MSI will be downloaded         |
+| `msi_source`      | `string` | URL from which to download the installation MSI                               |
+| `interface_alias` | `string` | InterfaceAlias on which to set the DNS settings                               |
+| `interface_index` | `int`    | InterfaceAlias on which to set the DNS settings (overrides `interface_alias`) |
+| `install_log`     | `string` | Fully-qualified path to the installation log                                  |
+
+#### Turning on Debuging Mode
+
+There are two approaches for turning on debugging for the ps1 script.
+
+##### Method 1: In the script file
+
+In the ps1 script, remove the comment marker `#`, changing the line
+
+```powershell
+#$DebugPreference = 'Continue'
+```
+
+to
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+##### Method 2: In the shell
+
+Execute the following at the shell prompt:
+
+```powershell
+$DebugPreference = 'Continue'
+```
+
+Note: This will enable debugging on all scripts run from this shell. To return to the default behavior, execute:
+
+```powershell
+$DebugPreference = 'ContinueSilently'
+```
+
 ### Customizing the install.ps1 script
 
 If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
@@ -104,8 +146,13 @@ Here's an example of changing other parameters:
 
 ```puppet
 class { 'pe_install_ps1':
-  msi_host       => 'puppet.company.net',
-  server_setting => 'puppet.company.net',
+  msi_host        => 'puppet.company.net',
+  server_setting  => 'puppet.company.net',
+  interface_index => '1',
+  $ntp_servers    => ['pool.us.ntp.org'],
+  dns_servers4    => ['8.8.8.8','8.8.4.4'],
+  validate_dns    => True,
+  override_dns    => False,
 }
 ```
 
@@ -128,11 +175,48 @@ The path to the public package share on the Puppet Master.
 
 Default value: `/opt/puppetlabs/server/data/packages/public`
 
+#### `interface_alias`
+The `InterfaceAlias` of the interface to which the DNS settings will be applied. This value will be overriden by `interface_index` if both are supplied.
+
+Default value: `Ethernet0`
+
+#### `interface_index`
+The `InterfaceIndex` of the interface to which the DNS settings will be applied. This value will override `interface_alias` if both are supplied.
+
+Default value: none
+
+#### `ntp_servers`
+An array of FQDN NTP servers to use to do the time sync.
+
+Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
+
+#### `dns_servers4`
+An array of IPv4 DNS servers to set on the specified interface.
+
+Default value: `[ ]`
+
+#### `dns_servers6`
+An array of IPv6 DNS servers to set on the specified interface.
+
+Default value: `[ ]`
+
+#### `validate_dns`
+Boolean to set whether or not the operating system should attempt to validate the provided DNS servers as being valid.
+
+Default value: `True`
+
+#### `override_dns`
+Boolean to set whether or not to override any existing DNS settings on the specified interface.
+
+Default value: `True`
+
 ## Limitations
 
 So far, this only works for **Puppet Enterprise 2015.2.1** or higher, and only for **x86_64** puppet-agent packages.
 
 The `pe_repo` module only supports staging the Windows Puppet Agent MSI since Puppet Enterprise 2015.2.1, so at least that version is required to get any use out of this module.
+
+This will only allow one to set the DNS entries for a single interface, which should be the one used to connect to the Puppet master. This is meant only as a stop-gap until the agent is fully installed, from which point DNS should be managed through standard Puppet practices. The same is true for the NTP settings, as well. They should be put under proper management once the agent is installed.
 
 ## Development
 

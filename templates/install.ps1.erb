@@ -1,28 +1,218 @@
 # install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
+[CmdletBinding()]
+
 Param(
-  [string]$server      = "<%= @server_setting %>",
-  [string]$certname    = $null,
-  [string]$msi_dest    = "$env:temp\puppet-agent-x64.msi",
-  [string]$msi_source  = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
-  [string]$install_log = "$env:temp\puppet-install.log",
-  [bool]$verbose       = $false
+  [string]$server          = "<%= @server_setting %>",
+  [string]$certname        = $null,
+  [string]$msi_dest        = "$env:temp\puppet-agent-x64.msi",
+  [string]$msi_source      = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
+<%# We need to use @interface here instead of @interface_alias, as this is a calculated field in the init.pp. -%>
+  [string]$interface_alias = "<%= @interface %>",
+<%# The value '-1' is looked for later to mean the InterfaceIndex has not been supplied.-%>
+  [int]$interface_index    = <% if @interface_index != '' %><%= @interface_index %><% else %>-1<% end %>,
+  [string]$install_log     = "$env:temp\puppet-install.log"
 )
+# Uncomment the following line to enable debugging messages. Alternatively, this variable can be set in the shell.
+#$DebugPreference = 'Continue'
+
+function ValidateParameters {
+  if (Get-Command Test-NetConnection -errorAction SilentlyContinue) {
+    Write-Verbose 'Validating server connections.'
+    $checkPort  = 8140
+    $msiHost    = ([System.Uri]$msi_source).Host 
+    $checkHosts = ($server, $msiHost)
+    foreach ($checkHost in $checkHosts) {
+      Write-Verbose "Checking connection to ${checkHost}:${checkPort}."
+      $checkJob = Start-Job -ScriptBlock {
+        param($checkHost, $checkPort)
+        Test-NetConnection -ComputerName "${checkHost}" -Port $checkPort -InformationLevel Quiet
+      } -ArgumentList ($CheckHost, $CheckPort)
+      Out-String -InputObject $checkJob -Stream | Write-Debug
+      $rc = Wait-Job $checkJob
+      Out-String -InputObject $rc -Stream | Write-Debug
+      $rc = Receive-Job $checkJob -OutVariable testResult
+      Out-String -InputObject $rc -Stream | Write-Debug
+      if ($testResult) {
+        Write-Verbose "Successful connection to ${checkHost}:${checkPort}."
+      }
+      else {        
+        Throw "Failed to connect to ${checkHost}:${checkPort}"
+        break
+      }
+    }
+  }
+  else {
+    Write-Debug 'Test-NetConnection cmdlet is not available. Skipping connection tests.'
+  }
+}
 
 function DownloadPuppet {
-  if ($verbose -ne $false) {
-    Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..." -verbose
-  }
+  Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..."
   [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
   $webclient = New-Object system.net.webclient
   try {
     $webclient.DownloadFile($msi_source,$msi_dest)
   }
   catch [Net.WebException] {
-    Write-Warning "Failed to download the Puppet Agent installer: $msi_source"
+    Write-Warning "Failed to download the Puppet Agent installer: ${msi_source}"
     Write-Warning "$_"
-    Write-Warning "Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?"
+    Write-Warning 'Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?'
     break
   }
+}
+
+function ResyncTime {
+  $result = $TRUE
+  W32tm /resync /force | foreach {
+    Write-Debug "$_"
+    if ($_ -like '*The computer did not resync because the required time change was too big*') {
+      $result = $FALSE
+    }
+    else {
+      if ($_ -like '*computer did not resync*') {
+        Write-Warning $_
+      }
+    }
+  }
+  return $result
+}
+
+function SetTimeServices {
+  Write-Verbose 'Managing time services (W32time).'
+  $timeServicesStatus = (Get-Service -Name W32time).Status
+  if ($timeServicesStatus -ne 'stopped') {
+    Write-Debug 'Stopping W32time service.'
+    $rc = net stop W32time
+    Out-String -InputObject $rc -Stream | Write-Debug
+  }
+  Write-Verbose "Configuring W32time to use '<%= @ntp %>' for time servers."
+  $rc = W32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
+  Out-String -InputObject $rc -Stream | Write-Debug
+  $rc = W32tm /config /reliable:yes
+  Out-String -InputObject $rc -Stream | Write-Debug
+  Write-Debug 'Starting W32time service.'
+  $rc = net start W32time
+  Out-String -InputObject $rc -Stream | Write-Debug
+  Write-Debug 'Current Configuration:'
+  W32tm /query /configuration | foreach {
+    Write-Debug "$_"
+  }
+  Write-Verbose 'Force time sync.'
+  $rc = ResyncTime
+  if (-Not $rc) {
+    $pauseSecs = 10
+    Write-Verbose 'Retrying time resync.'
+    Write-Debug   "Waiting ${pauseSecs} seconds before retrying time sync."
+    Start-Sleep -s $pauseSecs
+    $rc = ResyncTime
+    if (-Not $rc) {
+      Write-Error   'Could not sync time.'
+      Write-Warning 'Manual intervention may be neccessary. Please check provided NTP Servers.'
+      break
+    }
+  }
+}
+
+function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
+  Write-Debug "Set ${interface} [${index}] ${ipv} DNS Server Addresses to '${dns_servers}'"
+  $originalAddresses = (Get-DnsClientServerAddress -InterfaceIndex "$index" -AddressFamily $ipv).ServerAddresses
+  $serverAddresses   = $originalAddresses
+  $addressCount      = $serverAddresses.Count
+  Write-Debug "Pre-existing Server Addresses count: $addressCount"
+  if ($addressCount) {
+    $addressNames = Out-String -InputObject $originalAddresses -Stream
+    Write-Debug "Pre-existing Server Addresses: $addressNames"
+  }
+  if (-Not $addressCount -Or '<%= @dns_override %>') {
+    $serverAddresses = $dns_servers
+    if ($verbose -ne $FALSE) {
+    Write-Verbose "Updating ${ipv} DNS Server Addresses for ${interface} [${index}]: ${serverAddresses}"
+    }
+  }
+  else {
+    Write-Verbose "Keeping existing ${ipv} DNS Server Addresses for ${interface} [${index}]: ${serverAddresses}"
+  }
+  $serverAddresses = Out-String -InputObject $serverAddresses -Stream
+  if (-Not $serverAddresses) {
+    Write-Debug "No ${ipv} DNS Server Addresses defined for ${interface} [${index}]."
+    return $FALSE
+  }
+  Set-DnsClientServerAddress -InterfaceIndex $index -ServerAddresses $serverAddresses<% if @validate_dns %> -Validate<% end %> -ErrorAction 'Stop'
+  Write-Debug 'Verifying that a change occurred'
+  $newAddresses = (Get-DnsClientServerAddress -InterfaceIndex "$index" -AddressFamily $ipv).ServerAddresses
+  if (($originalAddresses -eq $newAddresses) -And ($originalAddresses -ne $serverAddresses)) {
+    $originalNames = Out-String -InputObject $originalAddresses -Stream
+    $serverNames   = Out-String -InputObject $serverAddresses   -Stream
+    $newNames      = Out-String -InputObject $newAddresses      -Stream
+    Write-Error   "Server Addresses '${originalNames}' should have been changed to '${serverNames}', but are '${newNames}' instead."
+    Write-Warning "Please verify ${interface} [${index}] is the correct interface and can have its ServerAddress set."
+    break
+  }
+  return $TRUE
+}
+
+function SetDnsServices {
+  Write-Debug 'Pre-evaluation values:'
+  Write-Debug "  InterfaceAlias: ${interface_alias}"
+  Write-Debug ('  InterfaceIndex: ' + $interface_index.ToString())
+  $search_type = ''
+  try {
+    if ($interface_index -ne -1) {
+      Write-Debug "Setting InterfaceAlias based on provided InterfaceIndex: ${interface_index}"
+      $search_type = 'index'
+      $index       = $interface_index
+      $interface   = (Get-DnsClientServerAddress -InterfaceIndex "$index" -ErrorAction 'Stop')[0].InterfaceAlias
+    }
+    else {
+      Write-Debug "Setting InterfaceIndex based on provided InterfaceAlias: ${interface_alias}"
+      $search_type = 'alias'
+      $interface   = $interface_alias
+      $index       = (Get-DnsClientServerAddress -InterfaceAlias "$interface" -ErrorAction 'Stop')[0].InterfaceIndex
+    }
+  }
+  catch {
+    if ($search_type -eq 'index') {
+      Throw "Invalid interface_index specified: ${interface_index}"
+    }
+    else {
+      Throw "Invalid interface_alias specified: ${interface_alias}"
+    }
+    break
+  }
+  if (-Not $index -Or -Not $interface) {
+    Throw 'Cannot find the requested interface on host. Unable to configure/verify DNS.'
+    break
+  }
+  $index = $index.ToString()
+  Write-Debug   'Post-evaluation values:'
+  Write-Debug   "  InterfaceAlias: ${interface}"
+  Write-Debug   "  InterfaceIndex: ${index}"
+  Write-Verbose "Setting DNS Server Addresses for ${interface} [${index}]."
+  try {
+    Write-Debug "Set-DnsClientServers will <% unless @validate_dns 
+                                     %>not <% end %>attempt to validate the supplied DNS servers."
+                                   
+    $ipv4_rc = SetDnsServerAddresses $interface $index 'IPv4' '<%= @dns4 %>'
+    $ipv6_rc = SetDnsServerAddresses $interface $index 'IPv6' '<%= @dns6 %>'
+    if ($ipv4_rc -Or $ipv6_rc) {
+      Write-Verbose "Successfully configured DNS Server Addresses for ${interface} [${index}]."
+    }
+    else {
+      Write-Warning "Failed to configure/validate DNS Server Addresses for ${interface} [${index}]."
+      break
+    }
+  }
+  catch {
+    if ($_.Exception.GetType().FullName -eq 'Microsoft.Management.Infrastructure.CimException') {
+      Throw "Failed to set the DNS Server Addresses for ${interface} [${index}]. Check the provided/existing server addresses."
+      break
+    }
+    else {
+      Throw $_.Exception
+    }
+  }
+  Write-Debug 'DNS Settings (all interfaces):'
+  Out-String -InputObject (Get-DnsClientServerAddress) -Stream | Write-Debug
 }
 
 function GetCertname {
@@ -42,33 +232,42 @@ function InstallPuppet {
     Throw 'Unable to determine a certname to use. Halting installation...'
     break
   }
-  if ($verbose -ne $false) {
-    Write-Verbose "Using certname => $real_certname" -verbose
-    Write-Verbose "Using server   => $server" -verbose
-    Write-Verbose "Saving the install log to $install_log" -verbose
-    Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..." -verbose
-  }
+  Write-Verbose "Using certname => ${real_certname}"
+  Write-Verbose "Using server   => ${server}"
+  Write-Verbose "Saving the install log to ${install_log}."
+  Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..."
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
-  $msiexec_args = "/qn /log $install_log /i $msi_dest PUPPET_MASTER_SERVER=$server PUPPET_AGENT_CERTNAME=$real_certname"
+  $msiexec_args = "/qn /log ${install_log} /i ${msi_dest} PUPPET_MASTER_SERVER=${server} PUPPET_AGENT_CERTNAME=${real_certname}"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
   $msiexec_proc.WaitForExit()
 }
 
 function ValidateInstall {
-  If ((Get-WmiObject -Class Win32_Product).Name -match 'Puppet') {
-    If ($verbose -ne $false) {
-      Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME" -verbose
-    }
-  } else {
-      Throw {"Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: $install_log" }
-      break
+  Write-Verbose 'Validating Puppet Agent.'
+  Write-Debug   'Checking if WmiObject exists for Puppet.'
+  If ((Get-WmiObject -Class Win32_Product).Name -Match 'Puppet') {
+    Write-Verbose "The Puppet Agent has been installed on $env:COMPUTERNAME."
+  }
+  else {
+    Throw "Something went wrong with the installation on $env:COMPUTERNAME.  Check the install log at: ${install_log}"
+    break
+  }
+  Write-Debug 'Validating Puppet Agent service is running.'
+  $puppetStatus = (Get-Service -Name Puppet).Status
+  if ($puppetStatus -eq 'running') {
+    Write-Verbose "The Puppet Agent is running on $env:COMPUTERNAME"
+  }
+  else {
+    Write-Debug "Puppet Agent Status: ${puppetStatus}"
+    Throw "Something went wrong with starting the Puppet Agent on $env:COMPUTERNAME.  Check the install log at: ${install_log}"
+    break
   }
 }
 
+ValidateParameters
 DownloadPuppet
+SetTimeServices
+SetDnsServices
 InstallPuppet
 ValidateInstall
-
-if ($verbose -ne $false) {
-  Write-Verbose "Installation has completed." -verbose
-}
+Write-Verbose 'Installation has completed.'
