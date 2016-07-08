@@ -28,7 +28,7 @@ class pe_install_ps1 (
   Boolean       $validate_dns    = true,
   Boolean       $override_dns    = true,
   Boolean       $set_dns_servers = false,
-) inherits pe_install_ps1::params {
+) {
 
   # Set default interface if one isn't provided.
   $default_interface = 'Ethernet0'
