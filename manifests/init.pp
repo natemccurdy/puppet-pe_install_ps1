@@ -18,7 +18,7 @@ class pe_install_ps1 (
   # NTP Settings
   Array[String] $ntp_servers     = ['0.pool.ntp.org','1.pool.ntp.org','2.pool.ntp.org'],
  Boolean $set_ntp_servers        = false,
-) inherits pe_install_ps1::params {
+) {
 
   # Template must provide wrapping "'"s for these variables.
   $ntp  = inline_template('<%= (@ntp_servers).join(",") %>')
