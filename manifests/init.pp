@@ -23,7 +23,7 @@ class pe_install_ps1 (
   # DNS Settings
   String        $interface_alias = 'Ethernet0',
   String        $interface_index = '',
-  Array[String] $dns_servers4    ='[],
+  Array[String] $dns_servers4    = [],
   Array[String] $dns_servers6    = [],
   Boolean       $validate_dns    = true,
   Boolean       $override_dns    = true,
