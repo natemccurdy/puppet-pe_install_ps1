@@ -11,6 +11,7 @@ Param(
 # Uncomment the following line to enable debugging messages. Alternatively, this variable can be set in the shell.
 #$DebugPreference = 'Continue'
 
+<% if @set_ntp_servers -%>
 function ValidateParameters {
   if (Get-Command Test-NetConnection -errorAction SilentlyContinue) {
     Write-Verbose 'Validating server connections.'
@@ -42,6 +43,7 @@ function ValidateParameters {
   }
 }
 
+<% end -%>
 function DownloadPuppet {
   Write-Verbose "Downloading the Puppet Agent for Puppet Enterprise <%= @pe_build %> on $env:COMPUTERNAME..."
   [System.Net.ServicePointManager]::ServerCertificateValidationCallback={$true}
@@ -160,7 +162,9 @@ function ValidateInstall {
 
 ValidateParameters
 DownloadPuppet
+<% if @set_ntp_servers -%>
 SetTimeServices
+<% end -%>
 InstallPuppet
 ValidateInstall
 Write-Verbose "Installation has completed."

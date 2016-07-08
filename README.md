@@ -136,9 +136,10 @@ Here's an example of changing other parameters:
 
 ```puppet
 class { 'pe_install_ps1':
-  msi_host        => 'puppet.company.net',
-  server_setting  => 'puppet.company.net',
-  $ntp_servers    => ['pool.us.ntp.org'],
+  msi_host         => 'puppet.company.net',
+  server_setting   => 'puppet.company.net',
+  $ntp_servers     => ['pool.us.ntp.org'],
+  $set_ntp_servers => true,
 }
 ```
 
@@ -165,6 +166,11 @@ Default value: `/opt/puppetlabs/server/data/packages/public`
 An array of FQDN NTP servers to use to do the time sync.
 
 Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
+
+#### `set_ntp_serves`
+Whether or not to the NTP servers.
+
+Default value: `false`
 
 ## Limitations
 
