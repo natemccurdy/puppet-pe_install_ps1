@@ -61,6 +61,7 @@ function DownloadPuppet {
   }
 }
 
+<% if @set_dns_servers -%>
 function SetDnsServerAddresses ( [string]$interface, [string]$index, [string]$ipv, [string]$dns_servers ) {
   Write-Debug "Set ${interface} [${index}] ${ipv} DNS Server Addresses to '${dns_servers}'"
   $originalAddresses = (Get-DnsClientServerAddress -InterfaceIndex "$index" -AddressFamily $ipv).ServerAddresses
@@ -163,6 +164,7 @@ function SetDnsServices {
   Out-String -InputObject (Get-DnsClientServerAddress) -Stream | Write-Debug
 }
 
+<% end -%>
 function GetCertname {
   if (![string]::IsNullOrEmpty($certname)) {
     $certname.ToLower()
@@ -214,7 +216,7 @@ function ValidateInstall {
 
 ValidateParameters
 DownloadPuppet
-SetDnsServices
+<% if @set_dns_servers %>SetDnsServices<% end -%>
 InstallPuppet
 ValidateInstall
 Write-Verbose "Installation has completed."

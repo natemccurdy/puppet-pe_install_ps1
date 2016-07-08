@@ -151,7 +151,8 @@ class { 'pe_install_ps1':
   interface_index => '1',
   dns_servers4    => ['8.8.8.8','8.8.4.4'],
   validate_dns    => True,
-  override_dns    => False,``
+  override_dns    => False,
+  set_dns_servers => True,
 }
 
 ## Reference
@@ -203,6 +204,11 @@ Boolean to set whether or not to override any existing DNS settings on the speci
 
 Default value: `True`
 
+
+#### `set_dns_servers`
+Boolean to set whether or not to enable the setting of DNS servers as part of the install process.
+
+Default value: `False`
 ## Limitations
 
 So far, this only works for **Puppet Enterprise 2015.2.1** or higher, and only for **x86_64** puppet-agent packages.
