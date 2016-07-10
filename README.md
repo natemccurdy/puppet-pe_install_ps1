@@ -168,7 +168,7 @@ An array of FQDN NTP servers to use to do the time sync.
 Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
 
 #### `set_ntp_serves`
-Whether or not to the NTP servers.
+Whether or not to configure the NTP servers.
 
 Default value: `false`
 
