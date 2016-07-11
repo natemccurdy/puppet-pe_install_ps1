@@ -81,12 +81,19 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/pe_ins
 
 The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `pe_install.ps1` script.
 
-Here's the table of MSI Properties that can adjusted with arguments to the ps1 script:
+All of the [MSI Properties available to the puppet-agent package](https://docs.puppet.com/pe/latest/install_windows.html#msi-properties) can be set by passing arguments to the PS1 script as shown in the table below:
 
 | MSI Property | ps1 Argument |
 |--------------|--------------|
-| `PUPPET_MASTER_SERVER`  | `server`   |
-| `PUPPET_AGENT_CERTNAME` | `certname` |
+| `INSTALLDIR`                    | `installdir`             |
+| `PUPPET_MASTER_SERVER`          | `server`                 |
+| `PUPPET_CA_SERVER`              | `ca_server`              |
+| `PUPPET_AGENT_CERTNAME`         | `certname`               |
+| `PUPPET_AGENT_ENVIRONMENT`      | `agent_environment`      |
+| `PUPPET_AGENT_STARTUP_MODE`     | `agent_startup_mode`     |
+| `PUPPET_AGENT_ACCOUNT_USER`     | `agent_account_user`     |
+| `PUPPET_AGENT_ACCOUNT_PASSWORD` | `agent_account_password` |
+| `PUPPET_AGENT_ACCOUNT_DOMAIN`   | `agent_account_domain`   |
 
 ```powershell
 $webClient = New-Object System.Net.WebClient
@@ -94,7 +101,7 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/pe_ins
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
-#### Turning on Debuging Mode
+#### Turning on Debugging Mode
 
 There are two approaches for turning on debugging for the ps1 script.
 
