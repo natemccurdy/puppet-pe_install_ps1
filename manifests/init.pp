@@ -10,10 +10,10 @@
 #
 class pe_install_ps1 (
   # Master/Agent Settings
-  String $server_setting         = $::settings::server,
-  String $msi_host               = $::settings::server,
-  String $public_dir             = $::pe_install_ps1::params::public_dir,
-) inherits pe_install_ps1::params {
+  String $server_setting = $::settings::server,
+  String $msi_host       = $::settings::server,
+  String $public_dir     = '/opt/puppetlabs/server/data/packages/public',
+) {
 
   # Validate the parameters.
   validate_absolute_path($public_dir)
