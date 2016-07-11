@@ -2,11 +2,18 @@
 [CmdletBinding()]
 
 Param(
-  [string]$server          = "<%= @server_setting %>",
-  [string]$certname        = $null,
-  [string]$msi_dest        = "$env:temp\puppet-agent-x64.msi",
-  [string]$msi_source      = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
-  [string]$install_log     = "$env:temp\puppet-install.log"
+  [string]$installdir             = $null,
+  [string]$server                 = "<%= @server_setting %>",
+  [string]$ca_server              = $null,
+  [string]$certname               = $null,
+  [string]$agent_environment      = $null,
+  [string]$agent_startup_mode     = $null,
+  [string]$agent_account_user     = $null,
+  [string]$agent_account_password = $null,
+  [string]$agent_account_domain   = $null,
+  [string]$msi_dest               = "$env:temp\puppet-agent-x64.msi",
+  [string]$msi_source             = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
+  [string]$install_log            = "$env:temp\puppet-install.log"
 )
 # Uncomment the following line to enable debugging messages. Alternatively, this variable can be set in the shell.
 #$DebugPreference = 'Continue'
@@ -64,22 +71,78 @@ function GetCertname {
     $objIPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
     $name_components = @($objIPProperties.HostName, $objIPProperties.DomainName) | ? {$_}
     $certname        = $name_components -Join "."
+    if ([string]::IsNullOrEmpty($certname)) {
+      Throw 'Unable to determine a certname to use. Halting installation...'
+      break
+    }
     $certname.ToLower()
   }
 }
 
-function InstallPuppet {
-  $real_certname = GetCertname
-  if ([string]::IsNullOrEmpty($real_certname)) {
-    Throw 'Unable to determine a certname to use. Halting installation...'
-    break
+function BuildMSIProperties {
+  # Create an empty list (they're more memory efficient than arrays).
+  $msi_properties = New-Object System.Collections.Generic.List[System.Object]
+
+  # Check for INSTALLDIR
+  if (![string]::IsNullOrEmpty($insalldir)) {
+    $msi_properties.Add("INSTALLDIR=${installdir}")
   }
-  Write-Verbose "Using certname => ${real_certname}"
-  Write-Verbose "Using server   => ${server}"
+
+  # Check for PUPPET_MASTER_SERVER
+  if (![string]::IsNullOrEmpty($server)) {
+    $msi_properties.Add("PUPPET_MASTER_SERVER=${server}")
+  }
+
+  # Check for PUPPET_CA_SERVER
+  if (![string]::IsNullOrEmpty($ca_server)) {
+    $msi_properties.Add("PUPPET_CA_SERVER=${ca_server}")
+  }
+
+  # Check for PUPPET_AGENT_CERTNAME
+  $real_certname = GetCertname
+  $msi_properties.Add("PUPPET_AGENT_CERTNAME=${real_certname}")
+
+  # Check for PUPPET_AGENT_ENVIRONMENT
+  if (![string]::IsNullOrEmpty($agent_environment)) {
+    $msi_properties.Add("PUPPET_AGENT_ENVIRONMENT=${agent_environment}")
+  }
+
+  # Check for PUPPET_AGENT_STARTUP_MODE
+  if (![string]::IsNullOrEmpty($agent_startup_mode)) {
+    $msi_properties.Add("PUPPET_AGENT_STARTUP_MODE=${agent_startup_mode}")
+  }
+
+  # Check for PUPPET_AGENT_ACCOUNT_USER
+  if (![string]::IsNullOrEmpty($agent_account_user)) {
+    $msi_properties.Add("PUPPET_AGENT_ACCOUNT_USER=${agent_account_user}")
+  }
+
+  # Check for PUPPET_AGENT_ACCOUNT_PASSWORD
+  if (![string]::IsNullOrEmpty($agent_account_password)) {
+    $msi_properties.Add("PUPPET_AGENT_ACCOUNT_PASSWORD=${agent_account_password}")
+  }
+
+  # Check for PUPPET_AGENT_ACCOUNT_DOMAIN
+  if (![string]::IsNullOrEmpty($agent_account_domain)) {
+    $msi_properties.Add("PUPPET_AGENT_ACCOUNT_DOMAIN=${agent_account_domain}")
+  }
+
+  # Return the argument list.
+  $msi_properties -Join " "
+}
+
+function InstallPuppet {
+
+  $install_options = BuildMSIProperties
+  Write-Verbose "Using the following MSI Properties: ${install_options}"
+
   Write-Verbose "Saving the install log to ${install_log}."
   Write-Verbose "Installing the Puppet Agent on $env:COMPUTERNAME..."
+
   $msiexec_path = "C:\Windows\System32\msiexec.exe"
-  $msiexec_args = "/qn /log ${install_log} /i ${msi_dest} PUPPET_MASTER_SERVER=${server} PUPPET_AGENT_CERTNAME=${real_certname}"
+  $msiexec_args = "/qn /log ${install_log} /i ${msi_dest} ${install_options}"
+
+  Write-Debug  "Executing: ${msiexec_path} ${msiexec_args}"
   $msiexec_proc = [System.Diagnostics.Process]::Start($msiexec_path, $msiexec_args)
   $msiexec_proc.WaitForExit()
 }
@@ -111,3 +174,4 @@ DownloadPuppet
 InstallPuppet
 ValidateInstall
 Write-Verbose "Installation has completed."
+
