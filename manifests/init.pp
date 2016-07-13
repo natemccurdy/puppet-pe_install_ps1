@@ -17,7 +17,7 @@ class pe_install_ps1 (
   String $public_dir             = '/opt/puppetlabs/server/data/packages/public',
   # NTP Settings
   Array[String] $ntp_servers     = ['0.pool.ntp.org','1.pool.ntp.org','2.pool.ntp.org'],
- Boolean $set_ntp_servers        = false,
+  Boolean $set_ntp_servers       = false,
 ) {
 
   # Template must provide wrapping "'"s for these variables.
