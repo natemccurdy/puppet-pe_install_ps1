@@ -3,7 +3,7 @@ describe 'pe_install_ps1' do
   context 'declared with all defaults on a PE 2015.3.2 Master' do
     let :facts do
       {
-        :pe_build => '2015.3.2',
+        :pe_server_version => '2015.3.2',
       }
     end
     let :params do
@@ -33,7 +33,7 @@ describe 'pe_install_ps1' do
   context 'declared on PE 3.8.2' do
     let :facts do
       {
-        :pe_build => '3.8.2'
+        :pe_server_version => '3.8.2'
       }
     end
     it 'should fail when using PE 3.8.2' do

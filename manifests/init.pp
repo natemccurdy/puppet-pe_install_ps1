@@ -19,16 +19,16 @@ class pe_install_ps1 (
   validate_absolute_path($public_dir)
 
   # Validate that this class is being declared on a Puppet Master.
-  if $::pe_build == undef {
+  if $facts['pe_server_version'] == undef {
     fail("Unable to determine the pe_build fact. ${module_name} should only be declared on a Puppet Master.")
-  } elsif versioncmp($::pe_build, '2015.2.1') == -1 {
-    fail("${module_name} is meant for PE versions greater than 2015.2.1, not ${::pe_build}.")
+  } elsif versioncmp($facts['pe_server_version'], '2015.2.1') == -1 {
+    fail("${module_name} is meant for PE versions greater than 2015.2.1, not ${facts['pe_server_version']}.")
   }
 
   # Create the Windows Agent installer script.
   file { 'PowerShell puppet-agent installer':
     ensure  => file,
-    path    => "${public_dir}/${::pe_build}/install.ps1",
+    path    => "${public_dir}/${facts['pe_server_version']}/install.ps1",
     owner   => 'root',
     group   => '0',
     mode    => '0664',
