@@ -6,6 +6,7 @@ Param(
   [string]$certname        = $null,
   [string]$msi_dest        = "$env:temp\puppet-agent-x64.msi",
   [string]$msi_source      = "https://<%= @msi_host %>:8140/packages/current/windows-x86_64/puppet-agent-x64.msi",
+  [boolean]$set_ntp        = <% if @set_ntp_servers %>$TRUE<% else %>$FALSE<% end %>,
   [string]$install_log     = "$env:temp\puppet-install.log"
 )
 # Uncomment the following line to enable debugging messages. Alternatively, this variable can be set in the shell.
@@ -54,6 +55,58 @@ function DownloadPuppet {
     Write-Warning "$_"
     Write-Warning 'Does the Puppet Master have the pe_repo::platform::windows_<arch> class applied to it?'
     break
+  }
+}
+
+function ResyncTime {
+  $result = $TRUE
+  W32tm /resync /force | foreach {
+    Write-Debug "$_"
+    if ($_ -like '*The computer did not resync because the required time change was too big*') {
+      $result = $FALSE
+    }
+    else {
+      if ($_ -like '*computer did not resync*') {
+        Write-Warning $_
+      }
+    }
+  }
+  return $result
+}
+
+function SetTimeServices {
+  Write-Verbose 'Managing time services (W32time).'
+  $timeServicesStatus = (Get-Service -Name W32time).Status
+  if ($timeServicesStatus -ne 'stopped') {
+    Write-Debug 'Stopping W32time service.'
+    $rc = net stop W32time
+    Out-String -InputObject $rc -Stream | Write-Debug
+  }
+  Write-Verbose "Configuring W32time to use '<%= @ntp %>' for time servers."
+  $rc = W32tm /config /syncfromflags:manual /manualpeerlist:'<%= @ntp %>'
+  Out-String -InputObject $rc -Stream | Write-Debug
+  $rc = W32tm /config /reliable:yes
+  Out-String -InputObject $rc -Stream | Write-Debug
+  Write-Debug 'Starting W32time service.'
+  $rc = net start W32time
+  Out-String -InputObject $rc -Stream | Write-Debug
+  Write-Debug 'Current Configuration:'
+  W32tm /query /configuration | foreach {
+    Write-Debug "$_"
+  }
+  Write-Verbose 'Force time sync.'
+  $rc = ResyncTime
+  if (-Not $rc) {
+    $pauseSecs = 10
+    Write-Verbose 'Retrying time resync.'
+    Write-Debug   "Waiting ${pauseSecs} seconds before retrying time sync."
+    Start-Sleep -s $pauseSecs
+    $rc = ResyncTime
+    if (-Not $rc) {
+      Write-Error   'Could not sync time.'
+      Write-Warning 'Manual intervention may be neccessary. Please check provided NTP Servers.'
+      break
+    }
   }
 }
 
@@ -108,6 +161,9 @@ function ValidateInstall {
 
 ValidateParameters
 DownloadPuppet
+if ($set_ntp) {
+  SetTimeServices
+}
 InstallPuppet
 ValidateInstall
 Write-Verbose "Installation has completed."
