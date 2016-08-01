@@ -4,18 +4,21 @@
 # This class will create an install.ps1 script on a Puppet Master so that Windows nodes
 # can more easily automate the installation of the Puppet agent.
 #
-# @param server_setting [String] The value that will go in 'server' setting of an agent's puppet.conf.
-# @param msi_host [String] The FQDN of the puppet server hosting the puppet-agent MSI installer.
-# @param public_dir [String] The path to the public package share on the Puppet Master.
+# @param server_setting  [String]      The value that will go in 'server' setting of an agent's puppet.conf.
+# @param msi_host        [String]      The FQDN of the puppet server hosting the puppet-agent MSI installer.
+# @param public_dir      [String]      The path to the public package share on the Puppet Master.
+# @param ntp_servers     Array[String] Array of NTP servers to use.
+# @param set_ntp_servers Boolean       Whether or not to set NTP servers.
 #
 class pe_install_ps1 (
   # Master/Agent Settings
   String $server_setting         = $::settings::server,
   String $msi_host               = $::settings::server,
-  String $public_dir             = $::pe_install_ps1::params::public_dir,
+  String $public_dir             = "/opt/puppetlabs/server/data/packages/public",
   # NTP Settings
-  Array[String] $ntp_servers     = $::pe_install_ps1::params::ntp_servers,
-) inherits pe_install_ps1::params {
+  Array[String] $ntp_servers     = ["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"],
+  Boolean $set_ntp_servers       = false,
+) {
 
   # Template must provide wrapping "'"s for these variables.
   $ntp  = inline_template('<%= (@ntp_servers).join(",") %>')

@@ -90,6 +90,19 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
+#### Enable NTP Settings
+
+By default, this script will not modify the NTP settings on the machine. To enable this feature, set the `set_ntp` flag to true:
+
+```powershell
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+& "$env:temp\install-agent.ps1" -certname win-db001.custom.net -set_ntp $TRUE
+```
+
+Alternatively, the default behavior can also be modified by changing the `set_ntp_servers` class parameter to `True` during
+node classification. This will alter the default value for `set_ntp` in the script.
+
 #### Turning on Debuging Mode
 
 There are two approaches for turning on debugging for the ps1 script.
@@ -136,9 +149,10 @@ Here's an example of changing other parameters:
 
 ```puppet
 class { 'pe_install_ps1':
-  msi_host        => 'puppet.company.net',
-  server_setting  => 'puppet.company.net',
-  $ntp_servers    => ['pool.us.ntp.org'],
+  msi_host         => 'puppet.company.net',
+  server_setting   => 'puppet.company.net',
+  $ntp_servers     => ['pool.us.ntp.org'],
+  $set_ntp_servers => true,
 }
 ```
 
@@ -165,6 +179,11 @@ Default value: `/opt/puppetlabs/server/data/packages/public`
 An array of FQDN NTP servers to use to do the time sync.
 
 Default value: `["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"]`
+
+#### `set_ntp_servers`
+Whether or not to configure the NTP servers.
+
+Default value: `false`
 
 ## Limitations
 
