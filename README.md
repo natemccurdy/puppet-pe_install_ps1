@@ -90,6 +90,20 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
+#### Enable DNS Settings
+
+By Default, this script will not modify the DNS settings ont he machine, to enable this feature, set the `set_dns` flag to true:
+
+```powershell
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+& "$env:temp\install-agent.ps1" -set_dns $TRUE
+```
+
+Alternatively, the default behavior can also be modified by changing the `set_dns_servers` class parameter to `True` during
+node classification. This will alter the default value for `set_dns` in the script. Please note, either `dns_servers4` or
+`dns_servers6` will need to be set in the node classification in order for this to work, as no default DNS servers are provided.
+
 #### Turning on Debuging Mode
 
 There are two approaches for turning on debugging for the ps1 script.
@@ -124,13 +138,14 @@ $DebugPreference = 'ContinueSilently'
 
 Additionally, the following optional arguments can be supplied to the ps1 script:
 
-| ps1 Argument      | Type     | Description                                                                   |
-|-------------------|----------|-------------------------------------------------------------------------------|
-| `msi_dest`        | `string` | Fully-qualified path to where the installation MSI will be downloaded         |
-| `msi_source`      | `string` | URL from which to download the installation MSI                               |
-| `interface_alias` | `string` | InterfaceAlias on which to set the DNS settings                               |
-| `interface_index` | `int`    | InterfaceAlias on which to set the DNS settings (overrides `interface_alias`) |
-| `install_log`     | `string` | Fully-qualified path to the installation log                                  |
+| ps1 Argument      | Type      | Description                                                                   |
+|-------------------|-----------|-------------------------------------------------------------------------------|
+| `msi_dest`        | `string`  | Fully-qualified path to where the installation MSI will be downloaded         |
+| `msi_source`      | `string`  | URL from which to download the installation MSI                               |
+| `set_dns`         | `boolean` | Enable configuring DNS settings                                               |
+| `interface_alias` | `string`  | InterfaceAlias on which to set the DNS settings                               |
+| `interface_index` | `int`     | InterfaceAlias on which to set the DNS settings (overrides `interface_alias`) |
+| `install_log`     | `string`  | Fully-qualified path to the installation log                                  |
 
 ### Customizing the install.ps1 script
 
@@ -209,6 +224,7 @@ Default value: `True`
 Boolean to set whether or not to enable the setting of DNS servers as part of the install process.
 
 Default value: `False`
+
 ## Limitations
 
 So far, this only works for **Puppet Enterprise 2015.2.1** or higher, and only for **x86_64** puppet-agent packages.
