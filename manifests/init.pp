@@ -14,9 +14,9 @@ class pe_install_ps1 (
   # Master/Agent Settings
   String $server_setting         = $::settings::server,
   String $msi_host               = $::settings::server,
-  String $public_dir             = '/opt/puppetlabs/server/data/packages/public',
+  String $public_dir             = "/opt/puppetlabs/server/data/packages/public",
   # NTP Settings
-  Array[String] $ntp_servers     = ['0.pool.ntp.org','1.pool.ntp.org','2.pool.ntp.org'],
+  Array[String] $ntp_servers     = ["0.pool.ntp.org","1.pool.ntp.org","2.pool.ntp.org"],
   Boolean $set_ntp_servers       = false,
 ) {
 
