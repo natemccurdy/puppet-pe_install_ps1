@@ -31,7 +31,7 @@ class pe_install_ps1 (
     path    => "${public_dir}/${facts['pe_server_version']}/install.ps1",
     owner   => 'root',
     group   => '0',
-    mode    => '0664',
+    mode    => '0644',
     content => template('pe_install_ps1/install.ps1.erb'),
   }
 
