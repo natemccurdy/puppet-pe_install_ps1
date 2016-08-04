@@ -92,7 +92,7 @@ $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/instal
 
 #### Enable DNS Settings
 
-By Default, this script will not modify the DNS settings ont he machine, to enable this feature, set the `set_dns` flag to true:
+By Default, this script will not modify the DNS settings on the machine, to enable this feature, set the `set_dns` flag to true:
 
 ```powershell
 $webClient = New-Object System.Net.WebClient
