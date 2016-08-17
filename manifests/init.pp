@@ -1,7 +1,7 @@
 # Class: pe_install_ps1
 # ===========================
 #
-# This class will create an install.ps1 script on a Puppet Master so that Windows nodes
+# This class will create a pe_install.ps1 script on a Puppet Master so that Windows nodes
 # can more easily automate the installation of the Puppet agent.
 #
 # @param server_setting [String] The value that will go in 'server' setting of an agent's puppet.conf.
@@ -28,11 +28,11 @@ class pe_install_ps1 (
   # Create the Windows Agent installer script.
   file { 'PowerShell puppet-agent installer':
     ensure  => file,
-    path    => "${public_dir}/${facts['pe_server_version']}/install.ps1",
+    path    => "${public_dir}/${facts['pe_server_version']}/pe_install.ps1",
     owner   => 'root',
     group   => '0',
     mode    => '0644',
-    content => template('pe_install_ps1/install.ps1.erb'),
+    content => template('pe_install_ps1/pe_install.ps1.erb'),
   }
 
 }

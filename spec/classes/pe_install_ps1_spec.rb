@@ -15,7 +15,7 @@ describe 'pe_install_ps1' do
     it { is_expected.to compile.with_all_deps }
     it { is_expected.to contain_file('PowerShell puppet-agent installer').with(
         'ensure' => 'file',
-        'path'   => '/opt/puppetlabs/server/data/packages/public/2015.3.2/install.ps1',
+        'path'   => '/opt/puppetlabs/server/data/packages/public/2015.3.2/pe_install.ps1',
         'owner'  => 'root',
         'group'  => '0',
         'mode'   => '0644'

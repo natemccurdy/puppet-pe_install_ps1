@@ -1,4 +1,4 @@
-# install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
+# pe_install.ps1 : This powershell script installs the puppet-agent package from a Puppet Enterprise master
 [CmdletBinding()]
 
 Param(
@@ -15,7 +15,7 @@ function ValidateParameters {
   if (Get-Command Test-NetConnection -errorAction SilentlyContinue) {
     Write-Verbose 'Validating server connections.'
     $checkPort  = 8140
-    $msiHost    = ([System.Uri]$msi_source).Host 
+    $msiHost    = ([System.Uri]$msi_source).Host
     $checkHosts = ($server, $msiHost)
     foreach ($checkHost in $checkHosts) {
       Write-Verbose "Checking connection to ${checkHost}:${checkPort}."
@@ -31,7 +31,7 @@ function ValidateParameters {
       if ($testResult) {
         Write-Verbose "Successful connection to ${checkHost}:${checkPort}."
       }
-      else {        
+      else {
         Throw "Failed to connect to ${checkHost}:${checkPort}"
         break
       }

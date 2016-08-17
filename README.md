@@ -9,28 +9,28 @@
   * [Windows Agent Install Process](#windows-agent-install-process)
     * [CMD Prompt](#administrative-cmd-window)
     * [PowerShell Prompt](#administrative-powershell-window)
-  * [Customizing the install.ps1 script](#customizing-the-installps1-script)
+  * [Customizing the pe_install.ps1 script](#customizing-the-installps1-script)
 1. [Reference](#reference)
 1. [Limitations](#limitations)
 1. [Development](#development)
 
 ## Overview
 
-This module will create a PowerShell script, `install.ps1`, that Windows nodes can remotely execute to emulate the [frictionless puppet-agent installer](https://docs.puppetlabs.com/pe/latest/install_agents.html#about-the-platform-specific-install-script) that was made for Linux nodes.
+This module will create a PowerShell script, `pe_install.ps1`, that Windows nodes can remotely execute to emulate the [frictionless puppet-agent installer](https://docs.puppetlabs.com/pe/latest/install_agents.html#about-the-platform-specific-install-script) that was made for Linux nodes.
 
 ## Setup
 
 ### Step 1: Add the Windows pe_repo platform to your Puppet Masters
 
-This module only creates an `install.ps1` script. Use the `pe_repo` module that comes with Puppet Enterprise to stage the MSI puppet-agent installer before trying to use the `install.ps1` script.
+This module only creates a `pe_install.ps1` script. Use the `pe_repo` module that comes with Puppet Enterprise to stage the MSI puppet-agent installer before trying to use the `pe_install.ps1` script.
 
 In the Enterprise Console, add the `pe_repo::platform::windows_x86_64` class to the `PE Master` node group.
 
-### Step 2: Download this module and classify your Puppet Masters with `ps_install_ps1`
+### Step 2: Download this module and classify your Puppet Masters with `pe_install_ps1`
 
-Either download this module with `puppet module install natemccurdy-ps_install_ps1` or add it to your Puppetfile and deploy r10k/code_manager.
+Either download this module with `puppet module install natemccurdy-pe_install_ps1` or add it to your Puppetfile and deploy r10k/code_manager.
 
-Then, add the `ps_install_ps1` class to your Puppet Masters and trigger a puppet agent run:
+Then, add the `pe_install_ps1` class to your Puppet Masters and trigger a puppet agent run:
 
 ```puppet
 include ::pe_install_ps1
@@ -38,10 +38,9 @@ include ::pe_install_ps1
 
 ## Usage
 
-
 ### Windows Agent Install Process
 
-To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/packages/current/install.bash | bash`) and remotely run the `install.ps1` script, you can use PowerShell's WebClient library with server validation disabled. Below are two ways you can do that depending on how you manage your Windows nodes.
+To emulate the frictionless installer for Linux (`curl -k https://puppet:8140/packages/current/install.bash | bash`) and remotely run the `pe_install.ps1` script, you can use PowerShell's WebClient library with server validation disabled. Below are two ways you can do that depending on how you manage your Windows nodes.
 
 Copy and paste these one-liner commands into an administrative CMD or PowerShell window.
 
@@ -50,14 +49,15 @@ Copy and paste these one-liner commands into an administrative CMD or PowerShell
 #### Administrative CMD window
 
 ```cmd
-@powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile('https://puppet.company.net:8140/packages/current/install.ps1', \"$env:temp\install-agent.ps1\"); & \"$env:temp\install-agent.ps1\""
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile('https://puppet.company.net:8140/packages/current/pe_install.ps1', \"$env:temp\install-agent.ps1\"); & \"$env:temp\install-agent.ps1\""
 ```
 
 #### Administrative PowerShell window
+
 Use this method for **WinRM** as well
 
 ```powershell
-[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
+[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; $webClient = New-Object System.Net.WebClient; $webClient.DownloadFile("https://puppet.company.net:8140/packages/current/pe_install.ps1", "$env:temp\install-agent.ps1"); & "$env:temp\install-agent.ps1"
 ```
 
 **Note:** You must have your execution policy set to unrestricted (or at least in bypass) for this to work (`Set-ExecutionPolicy Unrestricted`).
@@ -69,13 +69,13 @@ Here's what the commands look like when separated onto individual lines.
 ```powershell
 [Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
 $webClient = New-Object System.Net.WebClient
-$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/pe_install.ps1", "$env:temp\install-agent.ps1")
 & "$env:temp\install-agent.ps1" -verbose
 ```
 
 #### Adjusting the Puppet agent's settings during installation
 
-The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `install.ps1` script.
+The values for `server` and `certname`, in the agent's puppet.conf can be tuned during installation by passing the `server` and `certname` parameters to the `pe_install.ps1` script.
 
 Here's the table of MSI Properties that can adjusted with arguments to the ps1 script:
 
@@ -86,7 +86,7 @@ Here's the table of MSI Properties that can adjusted with arguments to the ps1 s
 
 ```powershell
 $webClient = New-Object System.Net.WebClient
-$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/install.ps1", "$env:temp\install-agent.ps1")
+$webClient.DownloadFile("https://puppet.company.net:8140/packages/current/pe_install.ps1", "$env:temp\install-agent.ps1")
 & "$env:temp\install-agent.ps1" -certname win-db001.custom.net -server alternate-puppet-master.custom.net
 ```
 
@@ -122,7 +122,7 @@ Note: This will enable debugging on all scripts run from this shell. To return t
 $DebugPreference = 'ContinueSilently'
 ```
 
-### Customizing the install.ps1 script
+### Customizing the pe_install.ps1 script
 
 If using load-balanced compile masters, change the `server_setting` parameter to that of your load-balancer or VIP's name.
 
@@ -146,16 +146,19 @@ class { 'pe_install_ps1':
 ### Class: `pe_install_ps1`
 
 #### `server_setting`
+
 The value that will go in the `server` setting in the agent's puppet.conf.
 
 Default value: `$::settings::server`
 
 #### `msi_host`
+
 The FQDN of the puppet server that is hosting the puppet-agent MSI installer.
 
 Default value: `$::settings::server`
 
 #### `public_dir`
+
 The path to the public package share on the Puppet Master.
 
 Default value: `/opt/puppetlabs/server/data/packages/public`
