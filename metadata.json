@@ -1,6 +1,6 @@
 {
   "name": "natemccurdy-pe_install_ps1",
-  "version": "0.2.5",
+  "version": "1.0.0",
   "author": "natemccurdy",
   "summary": "Creates a pe_install.ps1 script to automate puppet-agent installations in Puppet Entererprise",
   "license": "Apache-2.0",
