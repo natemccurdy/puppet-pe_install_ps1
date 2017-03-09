@@ -1,11 +1,9 @@
 [![Puppet Forge](http://img.shields.io/puppetforge/v/natemccurdy/pe_install_ps1.svg)](https://forge.puppetlabs.com/natemccurdy/pe_install_ps1)
 [![Build Status](https://travis-ci.org/natemccurdy/puppet-pe_install_ps1.svg?branch=master)](https://travis-ci.org/natemccurdy/puppet-pe_install_ps1)
 
-**IMPORTANT:** The name of the install script has changed to `pe_install.ps1`. Please adjust your bootstrap processes for the new name.
+> **DEPRECATION NOTICE:** Puppet Enterprise 2016.3.x now has a Powershell Windows installer built-in. If using 2016.3.x or higher, don't use this module; use the built-in installer instead. More info here: <https://docs.puppet.com/pe/latest/install_windows.html#installing-with-pe-package-management>
 
-It is very likely that a Windows Puppet Agent installer script will be part of Puppet Enterprise in the near future. To protect from a possible duplicate file resource and file-name conflict, the name of the PowerShell script has been changed from `install.ps1` to `pe_install.ps1`. For that same reason, this new version of the module will *not* erase the old `install.ps1` script that may have been made with a previous version of this module.
-
-#### Table of Contents
+## Table of Contents
 
 1. [Overview](#overview)
 1. [Setup - Important!](#setup)

@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.0] - 2016-08-16
+## [1.0.1] - 2017-03-09
+
+This will likely be the last release as Puppet Enterprise now ships with the better functionality than this module provides.
+
+### Changes:
+
+- Added deprecation notice to README
 
 ### Changes:
 
@@ -45,6 +51,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.2.0] - 2016-03-01
 
+[1.0.1]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.5...1.0.0
 [0.2.5]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.4...0.2.5
 [0.2.4]: https://github.com/natemccurdy/puppet-pe_install_ps1/compare/0.2.3...0.2.4
